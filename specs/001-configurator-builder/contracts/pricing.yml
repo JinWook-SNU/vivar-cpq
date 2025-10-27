@@ -1,0 +1,165 @@
+openapi: 3.1.0
+info:
+  title: Configurator Pricing API
+  version: 1.0.0
+servers:
+  - url: https://demo.vivar.local/api
+paths:
+  /pricing:
+    post:
+      summary: Calculate development and maintenance cost estimates for a configurator blueprint
+      operationId: postPricing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PricingRequest'
+      responses:
+        '200':
+          description: Pricing totals calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricingResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many requests (retry with backoff)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    PricingRequest:
+      type: object
+      required:
+        - blueprintId
+        - features
+        - roleRates
+      properties:
+        blueprintId:
+          type: string
+          format: uuid
+        features:
+          type: array
+          items:
+            type: string
+        roleRates:
+          type: object
+          additionalProperties:
+            type: number
+            description: Daily rate per role (keys: planner, designer, fe, three, be, ai)
+        k:
+          type: number
+          minimum: 0.8
+          maximum: 1.5
+    PricingResponse:
+      type: object
+      required:
+        - dev
+        - maint
+        - featureBreakdown
+        - trace
+        - traceId
+        - generatedAt
+      properties:
+        dev:
+          type: number
+        maint:
+          type: number
+        trace:
+          type: object
+          properties:
+            included:
+              type: array
+              items:
+                type: string
+        traceId:
+          type: string
+          format: uuid
+        generatedAt:
+          type: string
+          format: date-time
+        featureBreakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureCost'
+    FeatureCost:
+      type: object
+      required:
+        - featureKey
+        - devDelta
+        - maintDelta
+      properties:
+        featureKey:
+          type: string
+        devDelta:
+          type: number
+        maintDelta:
+          type: number
+        notes:
+          type: string
+          nullable: true
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        traceId:
+          type: string
+          format: uuid
+    SceneSetting:
+      type: object
+      required:
+        - backgroundPreset
+        - ambientIntensity
+        - directionalIntensity
+        - theme
+        - viewportMode
+      properties:
+        backgroundPreset:
+          type: string
+          enum: [light, dark, studio, gradient, custom]
+        backgroundColor:
+          type: string
+          nullable: true
+        ambientIntensity:
+          type: number
+          minimum: 0
+          maximum: 2
+        directionalIntensity:
+          type: number
+          minimum: 0
+          maximum: 2
+        directionalHue:
+          type: number
+          minimum: 0
+          maximum: 360
+        theme:
+          type: string
+          enum: [light, dark]
+        viewportMode:
+          type: string
+          enum: [desktop, mobile]
