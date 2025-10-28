@@ -70,16 +70,16 @@ A sales teammate picks which capabilities (utility buttons, color controls, AI a
 
 **Control Behaviors**:
 
-- **Dimension Overlay**: Toggles measurement HUD overlay; displays toast “Dimensions overlay enabled/disabled” on change.
-- **Fullscreen Button**: Invokes browser fullscreen API with fallback toast if blocked.
-- **Screenshot Button**: Captures WebGL canvas and renders preview modal with download CTA.
-- **Color Panel**: Applies selected swatch instantly to model material; displays hex code preview.
-- **Option Panel**: Lists configurable attachments/options with check state; disabling options removes dependent presets with helper toast.
+- **Dimension Overlay**: Toggles measurement HUD overlay (R3F HUD mesh) and displays toast “Dimensions overlay enabled/disabled” on change.
+- **Fullscreen Button**: Invokes browser fullscreen API with fallback toast if blocked and persists state in builder store.
+- **Screenshot Button**: Captures WebGL canvas and renders preview modal with download CTA (stub image accepted at this stage).
+- **AR Button**: Opens modal with static AR preview image and explanatory copy showing how the real asset would appear.
+- **Color Panel**: Applies selected swatch instantly to primary scene material (R3F mesh material update) and displays hex code preview.
+- **Option Panel**: Lists configurable attachments/meshes with check state; disabling options removes dependent presets with helper toast and hides the mesh in the R3F scene.
 - **Purchase Bar**: Static CTA placeholder showing current quote summary text; no checkout wiring.
-- **Preset Bar**: Shows preset pills; applying preset updates color/options together and logs action.
+- **Preset Bar**: Shows preset pills; applying preset updates color/options together, triggers pricing refresh, and logs action. Reset restores previous manual selections.
 - **AI Catalog UI**: Shows placeholder gallery card with “Powered by AI” ribbon when enabled; no backend request.
 - **AI Suggestions UI**: Presents suggestion chip(s) that inject recommended configs into panels; uses toast to confirm injection, no AI call.
-- **AR Button**: Opens modal with static AR preview image and explanatory copy.
 
 A prospect uses only the controls exposed by the builder to explore the product (change colors, toggle AR placeholder, inspect pricing) during a live meeting.
 
@@ -89,9 +89,11 @@ A prospect uses only the controls exposed by the builder to explore the product 
 
 **Acceptance Scenarios**:
 
-1. **Given** a saved configuration with AR placeholder disabled, **When** the prospect opens the utility menu, **Then** AR is absent, the remaining buttons respond instantly, and pricing recalculations stay within 500 ms (AC3).
-2. **Given** a configuration that exposes color and preset controls, **When** the prospect applies a preset, **Then** the 3D view updates while maintaining 60 FPS and the quote reflects the preset’s cost impact in under 500 ms (AC4).
-3. **Given** the demo is switched to mobile mode, **When** the prospect interacts with the mobile-optimized UI inside the browser-frame shell, **Then** all exposed controls remain accessible without horizontal scrolling and pricing updates stay within the 500 ms budget (AC8).
+1. **Given** a saved configuration with AR placeholder disabled, **When** the prospect opens the utility menu, **Then** AR is absent, the remaining buttons respond instantly, and pricing recalculations stay within 500 ms (AC3 / AC-VWR-001).
+2. **Given** dimension overlay is toggled on, **When** the prospect views the product, **Then** the measurement HUD renders over the model via R3F and can be toggled off without jitter (AC-VWR-002).
+3. **Given** a configuration that exposes color and option controls, **When** the prospect applies new swatches or toggles meshes, **Then** the scene materials/meshes update within 100 ms and the quote reflects changes in under 500 ms (AC4 / AC-VWR-003).
+4. **Given** preset pills are available, **When** the prospect applies or resets a preset, **Then** selections update, pricing refreshes, and a toast confirms success without duplicate API calls (AC-VWR-004).
+5. **Given** the demo is switched between desktop, tablet, and mobile frames, **When** the prospect toggles modes, **Then** the transition completes within 300 ms, focus shifts to the mode-specific primary control, and FPS readings remain ≥60 (AC8 / AC-VWR-005).
 
 **Viewer Control Matrix**:
 

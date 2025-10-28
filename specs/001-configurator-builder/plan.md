@@ -18,7 +18,7 @@ Deliver a two-pane CPQ demo workspace where sales/PM teammates configure which p
 
 **Cost Modeling**: Pricing engine references role-based effort table (see `pricing-rules.md`) summing base labour and feature increments, then applies 110% overhead, 20% technology fee, and 10% VAT; admin routes allow editing role rates and per-feature days.
 **Language/Version**: TypeScript (Next.js 16 App Router, React 19 w/ React Compiler, Node 20 LTS)  
-**Primary Dependencies**: shadcn/ui, Tailwind CSS tokens, @react-three/fiber, @react-three/drei, Zustand, Zod, Jest, React Testing Library, Playwright (smoke), Vercel tooling  
+**Primary Dependencies**: shadcn/ui, Tailwind CSS tokens, @react-three/fiber, @react-three/drei, Zustand, Zod, Vitest + React Testing Library, Playwright (smoke), Vercel tooling  
 **Storage**: Local-first blueprint persistence via localStorage (versioned schema with future server sync hook)  
 **Testing**: Vitest (unit/contract) with React Testing Library + jsdom, Playwright smoke for builder/viewer toggles, custom perf probes (FPS & latency); CI executes `vitest run --coverage`  
 **Target Platform**: Chrome 120+ (macOS), Edge 120+ (macOS/Windows 11), Safari 17+ (iPad Pro), Mobile Safari/Chrome (iPhone/Android emulator)  
@@ -104,3 +104,11 @@ trace/
 ## Complexity Tracking
 
 No anticipated constitution violations. Track scene-complexity optimizations in research notes for M3 if FPS risk increases.
+
+### Upcoming M3 Patch Plan
+- **Scene utilities (≤3 files)**: Wire DimensionHUD, AR placeholder, fullscreen, and screenshot scaffolding into the R3F scene with user feedback toasts.
+- **Color/Option binding**: Connect color palette and option toggles to R3F materials/meshes and trigger pricing refreshes.
+- **Preset flows**: Implement preset apply/reset behaviour, keep pricing in sync, and record UI toasts.
+- **AI stubs**: Polish AI Suggestions/Catalog UI states without backend calls (UX parity only).
+- **Device frame polish**: Ensure desktop/tablet/mobile frame transitions complete ≤300 ms while maintaining ≥60 FPS instrumentation.
+
