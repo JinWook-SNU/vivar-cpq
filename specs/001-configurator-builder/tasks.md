@@ -35,8 +35,8 @@ No additional setup tasks required; existing Next.js workspace and tooling alrea
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T001 Implement pricing coefficients and aggregation logic in `src/lib/pricing/{rules.ts,engine.ts}` with unit coverage in `tests/api/pricing.test.ts` (AC-PRC-001)
-- [ ] T002 Create `POST /api/pricing` handler in `src/app/api/pricing/route.ts` with Zod validation and error responses (AC-PRC-001, AC-API-001)
+- [x] T001 Implement pricing coefficients and aggregation logic in `src/lib/pricing/{rules.ts,engine.ts}` with unit coverage in `tests/api/pricing.test.ts` (AC-PRC-001)
+- [x] T002 Create `POST /api/pricing` handler in `src/app/api/pricing/route.ts` with Zod validation and error responses (AC-PRC-001, AC-API-001)
 
 **Checkpoint**: Pricing pipeline ready – builder UI can rely on deterministic cost outputs
 
@@ -50,10 +50,10 @@ No additional setup tasks required; existing Next.js workspace and tooling alrea
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] Build feature toggle controls (including independent AI Catalog / AI Suggestions switches) in `src/components/cpq/FeatureToggles.tsx` wired to `src/lib/store/builder.ts` state/actions (AC-UI-BLD-001)
-- [ ] T004 [US1] Define toggle rule guards in `src/lib/featureRules.ts` and cover independence scenarios in `tests/ui/dependency.guard.test.ts` (AC-VALID-001)
-- [ ] T005 [US1] Persist and restore `ConfiguratorBlueprint` v1 via `src/lib/persist/blueprint.ts` + `src/lib/store/builder.ts` hydration (AC-PERSIST-001)
-- [ ] T006 [US1] Assemble builder footer shell in `src/app/cpq-builder/page.tsx` and `src/components/cpq/EstimatePanel.tsx` to host estimate + mode toggles (AC-UI-BLD-001)
+- [x] T003 [US1] Build feature toggle controls (including independent AI Catalog / AI Suggestions switches) in `src/components/cpq/FeatureToggles.tsx` wired to `src/lib/store/builder.ts` state/actions (AC-UI-BLD-001)
+- [x] T004 [US1] Define toggle rule guards in `src/lib/featureRules.ts` and cover independence scenarios in `tests/ui/dependency.guard.test.ts` (AC-VALID-001)
+- [x] T005 [US1] Persist and restore `ConfiguratorBlueprint` v1 via `src/lib/persist/blueprint.ts` + `src/lib/store/builder.ts` hydration (AC-PERSIST-001)
+- [x] T006 [US1] Assemble builder footer shell in `src/app/cpq-builder/page.tsx` and `src/components/cpq/EstimatePanel.tsx` to host estimate + mode toggles (AC-UI-BLD-001)
 
 **Checkpoint**: Builder sidebar delivers toggle UX, guards invalid combos, and saves configurations locally.
 
@@ -84,9 +84,9 @@ No additional setup tasks required; existing Next.js workspace and tooling alrea
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] Bind Estimate Panel to pricing store in `src/components/cpq/EstimatePanel.tsx` and `src/lib/store/pricing.ts` for optimistic totals and expose breakdown modal/trace per `pricing-rules.md` (AC-UI-BLD-002, AC-PRC-001)
-- [ ] T012 [US3] Implement latency tracking + retry/backoff in `src/lib/metrics/latency.ts` and surface fallback UI in `src/components/cpq/EstimatePanel.tsx` (AC-UI-BLD-002, AC-PRC-002)
-- [ ] T013 [US3] Render NFR warning badges in `src/components/cpq/EstimatePanel.tsx` using metrics from `src/lib/metrics/*` to flag FPS/latency breaches (AC-UI-VWR-001, AC-UI-BLD-002)
+- [x] T011 [US3] Bind Estimate Panel to pricing store in `src/components/cpq/EstimatePanel.tsx` and `src/lib/store/pricing.ts` for optimistic totals and expose breakdown modal/trace per `pricing-rules.md` (AC-UI-BLD-002, AC-PRC-001)
+- [x] T012 [US3] Implement latency tracking + retry/backoff in `src/lib/metrics/latency.ts` and surface fallback UI in `src/components/cpq/EstimatePanel.tsx` (AC-UI-BLD-002, AC-PRC-002)
+- [x] T013 [US3] Render NFR warning badges in `src/components/cpq/EstimatePanel.tsx` using metrics from `src/lib/metrics/*` to flag FPS/latency breaches (AC-UI-VWR-001, AC-UI-BLD-002)
 
 **Checkpoint**: Cost insights remain reliable under jitter, with clear feedback when performance targets are at risk.
 
@@ -147,3 +147,15 @@ Task: "T009 [US2] Deliver color/option panels and purchase placeholder"
 - Developer B: US1 builder UX tasks (T003-T006).
 - Developer C: US2 viewer & panel tasks (T007-T010).
 - Shared: Cross-validate trace manifest updates alongside feature merges.
+
+---
+
+## Checkpoint (2025-10-27)
+- Branch: `001-configurator-builder`
+- Status: M1 complete (toggles, dependency guard with toast, Save/Load, savedAt). Tests on Vitest.
+- Next: M2 (Viewer + Pricing loop).
+- Completed in this phase:
+  - Implement pricing rules/engine
+  - POST /api/pricing (Zod validation)
+  - Wire EstimatePanel to pricing store (optimistic + cache + retry/backoff)
+  - Add latency/FPS warnings (P95<=500ms, FPS>=60)

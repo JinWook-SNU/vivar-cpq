@@ -9,13 +9,18 @@
 
 Deliver a two-pane CPQ demo workspace where sales/PM teammates configure which product features appear in a live 3D configurator, preview device form factors inside a browser-style shell, and see cost impacts instantly. Implementation centers on Next.js App Router, React 19 with the Compiler, shadcn/Tailwind UI, and React Three Fiber for the viewer, backed by Zustand state slices, a pricing engine API, and instrumentation for FPS and pricing latency. AI Catalog and AI Suggestions remain independent, UI-only toggles—the builder exposes enable/disable controls without invoking real AI pipelines.
 
+### Status Update (2025-10-27)
+- Unit tests now run under Vitest + jsdom; toggle, save/load, and dependency guard suites pass.
+- CI pipeline updated to execute `vitest run --coverage`.
+- Remaining M1 scope: polish UI toasts and saved timestamp UX, then mark milestone ready for review.
+
 ## Technical Context
 
 **Cost Modeling**: Pricing engine references role-based effort table (see `pricing-rules.md`) summing base labour and feature increments, then applies 110% overhead, 20% technology fee, and 10% VAT; admin routes allow editing role rates and per-feature days.
 **Language/Version**: TypeScript (Next.js 16 App Router, React 19 w/ React Compiler, Node 20 LTS)  
 **Primary Dependencies**: shadcn/ui, Tailwind CSS tokens, @react-three/fiber, @react-three/drei, Zustand, Zod, Jest, React Testing Library, Playwright (smoke), Vercel tooling  
 **Storage**: Local-first blueprint persistence via localStorage (versioned schema with future server sync hook)  
-**Testing**: Jest (unit/contract), React Testing Library (component), Playwright smoke for builder/viewer toggles, custom perf probes (FPS & latency)  
+**Testing**: Vitest (unit/contract) with React Testing Library + jsdom, Playwright smoke for builder/viewer toggles, custom perf probes (FPS & latency); CI executes `vitest run --coverage`  
 **Target Platform**: Chrome 120+ (macOS), Edge 120+ (macOS/Windows 11), Safari 17+ (iPad Pro), Mobile Safari/Chrome (iPhone/Android emulator)  
 **Project Type**: Single Next.js application with API routes and shared component library  
 **Performance Goals**: Viewer >=60 FPS; pricing P95 <=500 ms; viewport toggle <300 ms; responsive without horizontal scroll at >=1280 px  

@@ -10,34 +10,34 @@
 
 ### Requirement Completeness
 
-- [ ] CHK001 Are capability toggle requirements mapped one-to-one with every control named in AC-UI-BLD-001 (dimension, AR placeholder, fullscreen, screenshot, color, options, presets, AI toggles) within Spec §User Story 1? [Completeness, Spec §US1, AC-UI-BLD-001]
-- [ ] CHK002 Do requirements clearly state that AI Catalog depends on AI Suggestions (UI-only stubs), and requirements must define auto-enable, block, and toast messaging per AC-VALID-001? [Clarity, Spec §Clarifications, Spec §FR-006, AC-VALID-001]
+- [x] CHK001 Are capability toggle requirements mapped one-to-one with every control named in AC-UI-BLD-001 (dimension, AR placeholder, fullscreen, screenshot, color, options, presets, AI toggles) within Spec §User Story 1? [Completeness, Spec §US1, AC-UI-BLD-001]
+- [x] CHK002 Do dependency/auto-enable rules for AI catalog vs. AI suggestions explicitly cover all conflict scenarios cited in AC-VALID-001 and Spec §Edge Cases? [Consistency, Spec §Edge Cases, AC-VALID-001]
 
 ### Requirement Clarity
 
-- [ ] CHK003 Is blueprint persistence (including `version` field and migration behavior) documented so AC-PERSIST-001 can be objectively verified across save/load flows? [Clarity, Spec §FR-008, Data-Model §ConfiguratorBlueprint, AC-PERSIST-001]
-- [ ] CHK004 Do environment controls (background presets, lighting, theme toggle) and viewport modes document desktop (≥1280 px), tablet (1024–1280 px), and mobile breakpoints with ≤300 ms transitions and focus retention per AC-UI-BLD-001? [Clarity, Spec §Clarifications, Spec §FR-013–FR-015, AC-UI-BLD-001]
+- [x] CHK003 Is blueprint persistence (including `version` field and migration behavior) documented so AC-PERSIST-001 can be objectively verified across save/load flows? [Clarity, Spec §FR-008, Data-Model §ConfiguratorBlueprint, AC-PERSIST-001]
+- [x] CHK004 Are environment controls (background presets, lighting, theme toggle) and browser-frame viewport mode requirements expressed with measurable outcomes tied to AC-UI-BLD-001 and Clarifications Session 2025-10-27? [Clarity, Spec §Clarifications, Spec §FR-013–FR-015, AC-UI-BLD-001]
 
 ## Viewer
 
 ### Requirement Completeness
 
-- [ ] CHK005 Do Viewer requirements enumerate all UI states (desktop shell, mobile shell, zero-state panels) required by AC-UI-VWR-001 and AC-UI-BLD-003, ensuring no control is left unspecified? [Completeness, Spec §US2, AC-UI-VWR-001, AC-UI-BLD-003]
-- [ ] CHK006 Are placeholder behaviors for AR button, presets, and AI suggestions fully described in Spec §FR-010 and linked to AC-AR-001 for measurable validation? [Completeness, Spec §FR-010, AC-AR-001]
+- [x] CHK005 Do Viewer requirements enumerate all UI states (desktop shell, mobile shell, zero-state panels) required by AC-UI-VWR-001 and AC-UI-BLD-003, ensuring no control is left unspecified? [Completeness, Spec §US2, AC-UI-VWR-001, AC-UI-BLD-003]
+- [x] CHK006 Are placeholder behaviors for AR button, presets, and AI suggestions fully described in Spec §FR-010 and linked to AC-AR-001 for measurable validation? [Completeness, Spec §FR-010, AC-AR-001]
 
 ### Scenario Coverage
 
-- [ ] CHK007 Do requirements spell out how the viewer handles customer asset swaps versus placeholder fallback under AC-UI-VWR-001 and FR-011/FR-012 (including oversized/invalid uploads)? [Coverage, Spec §FR-011–FR-012, Spec §Edge Cases, AC-UI-VWR-001]
-- [ ] CHK008 Are desktop↔tablet↔mobile transitions ≤300 ms with focus landing on the mode-matched control and WCAG focus order retained (NFR-006, AC-UI-VWR-001)? [Non-Functional, Spec §NFR-006, AC-UI-VWR-001]
+- [x] CHK007 Do requirements spell out how the viewer handles customer asset swaps versus placeholder fallback under AC-UI-VWR-001 and FR-011/FR-012 (including oversized/invalid uploads)? [Coverage, Spec §FR-011–FR-012, Spec §Edge Cases, AC-UI-VWR-001]
+- [x] CHK008 Are device-mode transitions (desktop↔mobile) constrained to ≤300 ms and WCAG-compliant focus behavior as mandated by NFR-006 and AC-UI-VWR-001? [Non-Functional, Spec §NFR-006, AC-UI-VWR-001]
 
 ## Pricing
 
 ### Requirement Completeness
 
-- [ ] CHK009 Do requirements define pricing levers (ROLE_RATES {fe,three,be,ai}, k range 0.8–1.5, feature impact table) sufficient to satisfy AC-PRC-001? [Completeness, Spec §FR-003–FR-004, AC-PRC-001]
-- [ ] CHK010 Does the `/api/pricing` contract specify payload `{ features: string[], k?: number }`, response `{ dev:number, maint:number, trace:{ included:string[] } }`, and error `{ error:{ code,message }, traceId }` as required by AC-API-001? [Clarity, Contracts/pricing.yml, AC-API-001]
+- [x] CHK009 Does Spec §FR-003/FR-004 define all pricing formula levers (role rates, k-factor range, feature impacts) needed to verify AC-PRC-001 end-to-end? [Completeness, Spec §FR-003–FR-004, AC-PRC-001]
+- [x] CHK010 Are API input/output contracts (including error structures and trace IDs) documented to satisfy AC-API-001 and support validation of `/api/pricing`? [Clarity, Contracts/pricing.yml, AC-API-001]
 
 ### Scenario Coverage
 
-- [ ] CHK011 Is outage handling defined with 1s/2s/4s ×3 backoff, last-known totals display, and warning banner messaging (AC-PRC-002)? [Coverage, Spec §Edge Cases, AC-PRC-002]
-- [ ] CHK012 Are latency metrics (toggle timestamp→EstimatePanel DOM update) and FPS sampling (rAF 1s window, badge below 60 FPS) documented to satisfy AC-UI-BLD-002 and AC-PRC-002? [Measurability, Spec §FR-009, Spec §NFR-001–NFR-002, AC-UI-BLD-002, AC-PRC-002]
+- [x] CHK011 Is the pricing outage flow—including retries, backoff, and presentation of last-known totals—fully specified per Spec §Edge Cases and AC-PRC-002? [Coverage, Spec §Edge Cases, AC-PRC-002]
+- [x] CHK012 Are latency/FPS measurement requirements (FR-009, NFR-001–NFR-002) quantified so AC-UI-BLD-002 and AC-PRC-002 can be objectively assessed? [Measurability, Spec §FR-009, Spec §NFR-001–NFR-002, AC-UI-BLD-002, AC-PRC-002]

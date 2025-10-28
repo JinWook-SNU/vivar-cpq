@@ -45,3 +45,8 @@ Push to `main` with Vercel Git integration or run `vercel --prod`.
 - **FPS <60**: simplify scene (disable shadows), reduce asset size, ensure React Compiler annotations intact.
 - **Pricing timeout**: check mock `/api/pricing` logs; debugger prints include trace IDs.
 - **Unsupported 3D file**: verify format (GLB/glTF/OBJ) and size (<25 MB).
+
+## Checkpoint
+- **Branch**: `001-configurator-builder`
+- **Status**: M1 complete (toggles, dependency guard with toast, Save/Load, savedAt). Tests on Vitest.
+- **Next**: M2 (Viewer + Pricing loop) covering pricing engine, API, EstimatePanel optimistic updates, retry/backoff/cache, and latency/FPS warnings.

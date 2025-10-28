@@ -18,3 +18,11 @@ test("aiCatalog enables aiSuggestions", () => {
   expect(r.next.aiSuggestions).toBe(true);
   expect(r.autoEnabled).toContain("aiSuggestions");
 });
+
+test("cannot disable aiSuggestions while aiCatalog is active", () => {
+  const enabled = applyRules(base, { key: "aiCatalog", on: true });
+  const result = applyRules(enabled.next, { key: "aiSuggestions", on: false });
+  expect(result.next.aiSuggestions).toBe(true);
+  expect(result.blocked).toContain("aiSuggestions");
+  expect(result.message).toMatch(/aiCatalog/i);
+});

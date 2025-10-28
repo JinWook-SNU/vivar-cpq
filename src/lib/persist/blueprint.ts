@@ -10,8 +10,8 @@ export function toBlueprint(
   return {
     version: 1,
     createdAt: new Date().toISOString(),
-    featureToggles,
-    featureParams,
+    featureToggles: { ...featureToggles },
+    featureParams: { ...featureParams },
     presetId,
   };
 }

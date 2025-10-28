@@ -34,17 +34,31 @@ const DEFAULT_TOGGLES: Record<FeatureKey, boolean> = {
 type BuilderState = {
   toggles: Record<FeatureKey, boolean>;
   params: FeatureParams;
+  savedAt: string | null;
   setToggle: (k: FeatureKey, on: boolean) => void;
   setParam: <T extends keyof FeatureParams>(k: T, v: NonNullable<FeatureParams[T]>) => void;
   reset: () => void;
   loadFromBlueprint: (bp: ConfiguratorBlueprint) => void;
+  setSavedAt: (iso: string | null) => void;
 };
 
 export const useBuilderStore = create<BuilderState>((set) => ({
   toggles: { ...DEFAULT_TOGGLES },
   params: { screenshot: { resolution: "1x" } },
+  savedAt: null,
   setToggle: (k, on) => set((s) => ({ toggles: { ...s.toggles, [k]: on } })),
   setParam: (k, v) => set((s) => ({ params: { ...s.params, [k]: v } })),
-  reset: () => set({ toggles: { ...DEFAULT_TOGGLES }, params: { screenshot: { resolution: "1x" } } }),
-  loadFromBlueprint: (bp) => set({ toggles: bp.featureToggles, params: bp.featureParams }),
+  reset: () =>
+    set({
+      toggles: { ...DEFAULT_TOGGLES },
+      params: { screenshot: { resolution: "1x" } },
+      savedAt: null,
+    }),
+  loadFromBlueprint: (bp) =>
+    set({
+      toggles: { ...bp.featureToggles },
+      params: { ...bp.featureParams },
+      savedAt: bp.createdAt ?? null,
+    }),
+  setSavedAt: (iso) => set({ savedAt: iso }),
 }));
