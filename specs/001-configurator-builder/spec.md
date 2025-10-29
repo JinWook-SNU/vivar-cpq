@@ -59,6 +59,10 @@ A sales teammate picks which capabilities (utility buttons, color controls, AI a
 **Independent Test**: Toggle each feature flag in the builder while observing the live pane and instrumentation logs to confirm visible controls and pricing respond within the target budget and performance thresholds.
 
 **Acceptance Scenarios**:
+- **AC-COMP-001**: Utilities render within the viewer when toggled on, entering the live shell in ≤300 ms.
+- **AC-COMP-002**: Panels render immediately when enabled and are fully hidden when disabled.
+- **AC-COMP-003**: Enabling AI Catalog automatically enables AI Suggestions; both placeholders are visible together.
+- **AC-COMP-004**: Loading a saved blueprint restores the identical composition of utilities and panels.
 
 1. **Given** the default 3D configuration with all features disabled, **When** the sales teammate enables the dimension overlay and screenshot utilities in the builder, **Then** the left pane immediately shows the two utility buttons, the pricing response occurs within 500 ms, and the canvas stays at or above 60 FPS (AC1).
 2. **Given** a configuration with color and options controls enabled, **When** the teammate disables options in the builder, **Then** the options panel disappears from the left pane, related pricing adjustments are removed in under 500 ms, and the monitoring hook logs the change against AC2 tests.

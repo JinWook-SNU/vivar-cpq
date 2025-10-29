@@ -44,3 +44,8 @@ export function useFps(): number {
 export function isFpsWarning(): boolean {
   return fpsValue < 60;
 }
+
+export function useFpsStatus(threshold = 60): { fps: number; warning: boolean } {
+  const fps = useFps();
+  return { fps, warning: fps < threshold };
+}

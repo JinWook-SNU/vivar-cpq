@@ -29,12 +29,23 @@ const ITEMS: { key: FeatureKey; label: string }[] = [
 type StatusTone = "info" | "error" | "success";
 
 export default function FeatureToggles() {
-  const { toggles, params, savedAt, setToggle, setSavedAt, loadFromBlueprint } =
+  const {
+    toggles,
+    params,
+    environment,
+    savedAt,
+    activePresetId,
+    setToggle,
+    setSavedAt,
+    loadFromBlueprint,
+  } =
     useBuilderStore(
       useShallow((state) => ({
         toggles: state.toggles,
         params: state.params,
+        environment: state.environment,
         savedAt: state.savedAt,
+        activePresetId: state.activePresetId,
         setToggle: state.setToggle,
         setSavedAt: state.setSavedAt,
         loadFromBlueprint: state.loadFromBlueprint,
@@ -61,7 +72,12 @@ export default function FeatureToggles() {
   }
 
   function handleSave() {
-    const blueprint: ConfiguratorBlueprint = toBlueprint(toggles, params);
+    const blueprint: ConfiguratorBlueprint = toBlueprint(
+      toggles,
+      params,
+      activePresetId,
+      environment
+    );
     saveBlueprint(blueprint);
     setSavedAt(blueprint.createdAt);
     setStatus({ tone: "success", message: "Saved current configuration." });
@@ -85,6 +101,28 @@ export default function FeatureToggles() {
       return `Saved at ${savedAt}`;
     }
   }, [savedAt]);
+
+  const aiEntrypoints = useMemo(() => {
+    const entries: { id: string; label: string }[] = [];
+    if (toggles.aiSuggestions) {
+      entries.push({ id: "ai-suggestions", label: "View AI Suggestions stub" });
+    }
+    if (toggles.aiCatalog) {
+      entries.push({ id: "ai-catalog", label: "View AI Catalog stub" });
+    }
+    return entries;
+  }, [toggles.aiSuggestions, toggles.aiCatalog]);
+
+  function scrollToStub(targetId: string) {
+    if (typeof window === "undefined") return;
+    const element = document.getElementById(targetId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (typeof element.focus === "function") {
+        element.focus();
+      }
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -133,6 +171,28 @@ export default function FeatureToggles() {
           {savedLabel}
         </span>
       </div>
+      {aiEntrypoints.length > 0 && (
+        <div
+          className="rounded-md border border-neutral-200 bg-neutral-50 p-3"
+          data-testid="ai-entrypoints"
+        >
+          <p className="mb-2 text-xs font-medium text-neutral-600">
+            Preview AI UI stubs in the live pane
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {aiEntrypoints.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                className="rounded-md border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700 transition hover:border-neutral-400 hover:bg-neutral-50"
+                onClick={() => scrollToStub(entry.id)}
+              >
+                {entry.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
-import { useBuilderStore, type FeatureKey } from "@/lib/store/builder";
+import {
+  useBuilderStore,
+  type FeatureKey,
+  DEFAULT_COLOR,
+  DEFAULT_OPTIONS,
+} from "@/lib/store/builder";
 import { usePricingStore } from "@/lib/store/pricing";
 import { useShallow } from "zustand/react/shallow";
 import { useLatencyP95 } from "@/lib/metrics/latency";
@@ -20,7 +25,14 @@ function formatCurrency(value: number) {
 }
 
 export default function EstimatePanel() {
-  const toggles = useBuilderStore((state) => state.toggles);
+  const { toggles, activePresetId, colorHex, optionMap } = useBuilderStore(
+    useShallow((state) => ({
+      toggles: state.toggles,
+      activePresetId: state.activePresetId,
+      colorHex: state.params.color?.hex ?? DEFAULT_COLOR,
+      optionMap: state.params.options ?? DEFAULT_OPTIONS,
+    }))
+  );
   const { totals, optimistic, status, lastError, requestQuote } = usePricingStore(
     useShallow((state) => ({
       totals: state.totals,
@@ -31,13 +43,24 @@ export default function EstimatePanel() {
     }))
   );
 
-  const featuresKey = useMemo(() => {
-    const enabled = Object.entries(toggles)
+  const features = useMemo<FeatureKey[]>(() => {
+    return Object.entries(toggles)
       .filter(([, on]) => on)
-      .map(([key]) => key)
-      .join("|");
-    return enabled;
+      .map(([key]) => key as FeatureKey);
   }, [toggles]);
+
+  const colorSignature = colorHex.toLowerCase();
+  const optionSignature = useMemo(() => {
+    return Object.entries(optionMap)
+      .map(([key, value]) => `${key}:${value ? 1 : 0}`)
+      .sort()
+      .join(",");
+  }, [optionMap]);
+
+  const pricingSignature = useMemo(
+    () => [features.join("|"), activePresetId ?? "", colorSignature, optionSignature].join("::"),
+    [features, activePresetId, colorSignature, optionSignature]
+  );
 
   const requestRef = useRef(requestQuote);
   useEffect(() => {
@@ -45,9 +68,8 @@ export default function EstimatePanel() {
   }, [requestQuote]);
 
   useEffect(() => {
-    const list = featuresKey ? (featuresKey.split("|") as FeatureKey[]) : [];
-    requestRef.current(list);
-  }, [featuresKey]);
+    requestRef.current(features);
+  }, [pricingSignature, features]);
 
   useEffect(() => {
     ensureFpsSampler();

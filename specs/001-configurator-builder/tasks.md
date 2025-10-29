@@ -67,10 +67,10 @@ No additional setup tasks required; existing Next.js workspace and tooling alrea
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Implement `SceneCanvas` with placeholder asset swap and FPS sampler hook in `src/components/viewer/SceneCanvas.tsx` + `src/lib/metrics/fps.ts` (AC-UI-VWR-001)
+- [x] T007 [US2] Implement `SceneCanvas` with placeholder asset swap and FPS sampler hook in `src/components/viewer/SceneCanvas.tsx` + `src/lib/metrics/fps.ts` (AC-UI-VWR-001)
 - [ ] T008 [US2] Wire viewer utility controls (`DimensionHUD`, `FullscreenButton`, `ScreenshotButton`) in `src/components/viewer/` to respect builder toggles (AC-UI-BLD-001)
-- [ ] T009 [US2] Deliver color/option panels and purchase placeholder in `src/components/panels/{ColorPanel,OptionPanel,PurchaseBar}.tsx` with mobile-responsive layout (AC-UI-BLD-001..003)
-- [ ] T010 [US2] Stub AR button, preset bar, and AI catalog/suggestion UI placeholders in `src/components/{viewer/ARButton,cpq/PresetBar,cpq/AIStubs}.tsx` honoring on/off flags without backend calls (AC-AR-001)
+- [x] T009 [US2] Deliver color/option panels and purchase placeholder in `src/components/panels/{ColorPanel,OptionPanel,PurchaseBar}.tsx` with mobile-responsive layout (AC-UI-BLD-001..003)
+- [x] T010 [US2] Stub AR button, preset bar, and AI catalog/suggestion UI placeholders in `src/components/{viewer/ARButton,cpq/PresetBar,cpq/AIStubs}.tsx` honoring on/off flags without backend calls (AC-AR-001)
 
 **Checkpoint**: Viewer reflects builder configuration across devices with working panels and placeholder experiences.
 
