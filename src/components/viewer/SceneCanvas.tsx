@@ -10,9 +10,10 @@ import {
   type ReactNode,
   type HTMLAttributes,
 } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
-import type { Mesh } from "three";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls as ThreeOrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+
 import {
   useBuilderStore,
   DEFAULT_COLOR,
@@ -52,6 +53,7 @@ export function ViewerSceneProvider({ children }: { children: ReactNode }) {
   const optionsMap = useBuilderStore((state) => state.params.options ?? DEFAULT_OPTIONS);
   const setColorHex = useBuilderStore((state) => state.setColorHex);
   const setOptionValue = useBuilderStore((state) => state.setOptionValue);
+  const syncRuntimeOptions = useRuntimeStore((state) => state.setOptions);
 
   const value = useMemo<ViewerSceneContextValue>(
     () => ({
@@ -63,6 +65,10 @@ export function ViewerSceneProvider({ children }: { children: ReactNode }) {
     }),
     [colorHex, optionsMap, setColorHex, setOptionValue]
   );
+
+  useEffect(() => {
+    syncRuntimeOptions(optionsMap);
+  }, [optionsMap, syncRuntimeOptions]);
 
   return <ViewerSceneContext.Provider value={value}>{children}</ViewerSceneContext.Provider>;
 }
@@ -91,11 +97,11 @@ export default function SceneCanvas(props?: SceneCanvasProps) {
     screenshot: Boolean(utilities?.screenshot),
     ar: Boolean(utilities?.ar),
   };
-  const meshRef = useRef<Mesh>(null);
-
   useEffect(() => {
     setRuntimeProduct(color);
   }, [color, setRuntimeProduct]);
+  const spoilerEnabled = Boolean(options.spoiler);
+  const roofRackEnabled = Boolean(options.roofRack);
 
   return (
     <div
@@ -104,8 +110,8 @@ export default function SceneCanvas(props?: SceneCanvasProps) {
         ((rest as Record<string, unknown>)["data-testid"] as string | undefined) ?? "scene-canvas"
       }
       data-fps={fps}
-      data-option-spoiler={options.spoiler}
-      data-option-roof-rack={options.roofRack}
+      data-option-spoiler={spoilerEnabled}
+      data-option-roof-rack={roofRackEnabled}
       data-util-dimension={utilFlags.dimension}
       data-util-fullscreen={utilFlags.fullscreen}
       data-util-screenshot={utilFlags.screenshot}
@@ -117,18 +123,16 @@ export default function SceneCanvas(props?: SceneCanvasProps) {
       style={{ backgroundColor }}
     >
       <Canvas className="h-full w-full" dpr={[1, 1.5]}>
-        <color attach="background" args={[backgroundColor]} />
+        <SceneBackground color={backgroundColor} />
         <ambientLight intensity={0.7} />
         <directionalLight position={[2, 2, 2]} intensity={0.6} />
-        <mesh ref={meshRef} position={[0, 0, 0]}>
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial
-            color={productColor}
-            metalness={0.2}
-            roughness={0.6}
-          />
+        <mesh position={[0, 0, 0]} data-testid="vehicle-body">
+          <boxGeometry args={[1, 0.6, 2]} />
+          <meshStandardMaterial color={productColor} metalness={0.2} roughness={0.6} />
         </mesh>
-        <OrbitControls enablePan={false} />
+        {spoilerEnabled && <SpoilerAttachment />}
+        {roofRackEnabled && <RoofRackAttachment />}
+        <ViewerOrbitControls />
       </Canvas>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
@@ -159,5 +163,52 @@ export function useSceneBridge() {
       setProduct,
     }),
     [setBackground, setProduct]
+  );
+}
+
+function ViewerOrbitControls() {
+  const { camera, gl } = useThree();
+  const controlsRef = useRef<OrbitControls | null>(null);
+
+  useEffect(() => {
+    const controls = new ThreeOrbitControls(camera, gl.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.1;
+    controlsRef.current = controls;
+    return () => controls.dispose();
+  }, [camera, gl]);
+
+  useFrame(() => {
+    controlsRef.current?.update();
+  });
+
+  return null;
+}
+
+function SceneBackground({ color }: { color: string }) {
+  return <color attach="background" args={[color]} />;
+}
+
+function SpoilerAttachment() {
+  return (
+    <mesh position={[0, 0.45, -0.9]} data-testid="spoiler-attachment">
+      <boxGeometry args={[0.9, 0.05, 0.4]} />
+      <meshStandardMaterial color="#1f2937" metalness={0.15} roughness={0.4} />
+    </mesh>
+  );
+}
+
+function RoofRackAttachment() {
+  return (
+    <group data-testid="roofrack-attachment">
+      <mesh position={[0, 0.6, 0]}>
+        <boxGeometry args={[1.1, 0.08, 1.4]} />
+        <meshStandardMaterial color="#374151" metalness={0.2} roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0.68, 0]}>
+        <boxGeometry args={[0.3, 0.05, 1.45]} />
+        <meshStandardMaterial color="#0f172a" metalness={0.3} roughness={0.35} />
+      </mesh>
+    </group>
   );
 }

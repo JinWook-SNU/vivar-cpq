@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic";
+import clsx from "clsx";
 import { composeVisible } from "@/lib/runtime/composer";
 import { ViewerSceneProvider } from "@/components/viewer/SceneCanvas";
 import DimensionHUD from "@/components/viewer/DimensionHUD";
@@ -68,14 +69,22 @@ const SceneCanvas = dynamic(() => import("@/components/viewer/SceneCanvas"), {
 
 export default function ConfiguratorShell({ toggles }: ConfiguratorShellProps) {
   const vm = composeVisible(toggles);
+  const hasPanels = Object.values(vm.panels).some(Boolean);
+  const shellLayout = clsx(
+    "grid w-full gap-6",
+    hasPanels
+      ? "md:grid-cols-[minmax(640px,1.7fr)_minmax(320px,1fr)]"
+      : "md:grid-cols-1"
+  );
+  const viewerContainer = clsx(
+    "relative flex h-full min-h-[360px] w-full min-w-[280px] overflow-hidden rounded-2xl border border-neutral-200 bg-white",
+    "md:min-h-[520px] lg:min-h-[600px]"
+  );
 
   return (
     <ViewerSceneProvider>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2" data-testid="config-shell">
-        <div
-          className="relative w-full h-[min(60vh,640px)] md:h-[600px] lg:h-[680px] overflow-hidden rounded-2xl border border-neutral-200 bg-white"
-          data-testid="shell-viewer"
-        >
+      <div className={shellLayout} data-testid="config-shell">
+        <div className={viewerContainer} data-testid="shell-viewer">
           <SceneCanvas data-testid="scene-canvas" utilities={vm.utilities} />
           <VisibleUtilities
             showDimension={vm.utilities.dimension}
@@ -85,21 +94,41 @@ export default function ConfiguratorShell({ toggles }: ConfiguratorShellProps) {
           />
         </div>
 
-        <div className="flex flex-col gap-4" data-testid="shell-panels">
-          {vm.panels.color && <ProductColorPanel />}
-          {vm.panels.options && <div data-testid="panel-options"><OptionPanel /></div>}
-          {vm.panels.presets && <div data-testid="panel-presets"><PresetBar /></div>}
-          {vm.panels.aiSuggestions && (
-            <div data-testid="panel-ai-suggestions">
-              <AIStubs.Suggestions />
-            </div>
-          )}
-          {vm.panels.aiCatalog && (
-            <div data-testid="panel-ai-catalog">
-              <AIStubs.Catalog />
-            </div>
-          )}
-        </div>
+        {hasPanels ? (
+          <div className="flex min-w-[280px] flex-col gap-4" data-testid="shell-panels">
+            {vm.panels.color && <ProductColorPanel />}
+            {vm.panels.options && (
+              <div data-testid="panel-options">
+                <OptionPanel />
+              </div>
+            )}
+            {vm.panels.presets && (
+              <div data-testid="panel-presets">
+                <PresetBar />
+              </div>
+            )}
+            {vm.panels.aiSuggestions && (
+              <div data-testid="panel-ai-suggestions">
+                <AIStubs.Suggestions />
+              </div>
+            )}
+            {vm.panels.aiCatalog && (
+              <div data-testid="panel-ai-catalog">
+                <AIStubs.Catalog />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            aria-hidden="true"
+            className="hidden md:flex md:min-w-[320px] md:flex-col md:items-center md:justify-center md:rounded-2xl md:border md:border-dashed md:border-neutral-200 md:bg-neutral-50 md:p-6"
+            data-testid="shell-panels"
+          >
+            <p className="text-xs text-neutral-500">
+              Enable builder panels to adjust colors, options, and presets.
+            </p>
+          </div>
+        )}
       </div>
     </ViewerSceneProvider>
   );
