@@ -53,3 +53,12 @@ Push to `main` with Vercel Git integration or run `vercel --prod`.
 - M3 consolidated: single ConfiguratorShell renders viewer/panels; duplicate previews removed; left viewer/right panels layout now live.
 - Viewer utilities + Color/Option binding + Presets complete
 - Next: M4 (Quote packaging & share, Admin mock, Playwright smoke)
+
+## Implementation Notes
+- 2025-10-30
+  - Impl checkpoint
+  - Builder: Feature toggles, Environment (bg color), Estimate panel stub
+  - Preview: single viewer shell, 3D box, product color panel
+  - R3F: client-only SceneCanvas, dynamic import, background via useThree
+  - Persist: blueprint with environment + color
+  - TODO (later): option→mesh binding, export, admin mock
