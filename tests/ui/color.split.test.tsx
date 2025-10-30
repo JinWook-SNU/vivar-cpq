@@ -27,10 +27,10 @@ describe("Preview/product color separation", () => {
     document.body.innerHTML = "";
   });
 
-  it("shows only product color panel in preview and updates runtime store", () => {
+  it("shows only product color panel in preview and updates runtime store", async () => {
     render(<Page />);
 
-    const canvasList = screen.getAllByTestId("scene-canvas");
+    const canvasList = await screen.findAllByTestId("scene-canvas");
     expect(canvasList).toHaveLength(1);
     expect(screen.queryByTestId("panel-bg-color")).toBeNull();
 

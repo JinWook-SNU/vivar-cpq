@@ -19,13 +19,13 @@ describe("Builder environment settings", () => {
     document.body.innerHTML = "";
   });
 
-  it("renders builder environment controls and keeps preview in sync", () => {
+  it("renders builder environment controls and keeps preview in sync", async () => {
     render(<Page />);
 
     const builderEnv = screen.getByTestId("builder-env-bg");
     expect(builderEnv).toBeInTheDocument();
 
-    const canvasList = screen.getAllByTestId("scene-canvas");
+    const canvasList = await screen.findAllByTestId("scene-canvas");
     expect(canvasList).toHaveLength(1);
     expect(screen.queryByTestId("panel-bg-color")).toBeNull();
 

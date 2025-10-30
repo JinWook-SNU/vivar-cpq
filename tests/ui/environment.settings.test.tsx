@@ -31,7 +31,7 @@ describe("EnvironmentSettings", () => {
   it("updates builder and runtime state when selecting a swatch", () => {
     render(<EnvironmentSettings />);
 
-    const targetHex = "#f8fafc";
+    const targetHex = "#0ea5e9";
     const swatch = screen.getByLabelText(`Set environment background to ${targetHex}`);
     fireEvent.click(swatch);
 

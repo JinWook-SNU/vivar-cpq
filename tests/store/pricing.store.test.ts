@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { usePricingStore } from "@/lib/store/pricing";
+import { resetPricingSignature, usePricingStore } from "@/lib/store/pricing";
 import { calculatePricing } from "@/lib/pricing/engine";
 
 const FEATURES = ["dimension", "option"] as const;
@@ -13,6 +13,7 @@ describe("pricing store", () => {
       status: "idle",
       lastError: undefined,
     });
+    resetPricingSignature();
   });
 
   it("stores server response on success", async () => {

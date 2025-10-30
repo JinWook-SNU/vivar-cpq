@@ -12,9 +12,9 @@ describe("ConfiguratorShell composition", () => {
     });
   });
 
-  it("renders no utilities or panels when toggles are false", () => {
+  it("renders no utilities or panels when toggles are false", async () => {
     renderShell({});
-    expect(screen.getByTestId("scene-canvas")).toBeInTheDocument();
+    await screen.findByTestId("scene-canvas");
     expect(screen.queryByTestId("dimension-hud")).toBeNull();
     expect(screen.queryByTestId("panel-product-color")).toBeNull();
     expect(screen.getAllByTestId("scene-canvas")).toHaveLength(1);
@@ -23,7 +23,7 @@ describe("ConfiguratorShell composition", () => {
     expect(screen.getByTestId("shell-panels")).toBeInTheDocument();
   });
 
-  it("shows a utility when toggled on", () => {
+  it("shows a utility when toggled on", async () => {
     act(() => {
       useBuilderStore.setState((state) => ({
         ...state,
@@ -31,11 +31,11 @@ describe("ConfiguratorShell composition", () => {
       }));
     });
     renderShell({ dimension: true });
-    expect(screen.getByTestId("dimension-hud")).toBeInTheDocument();
+    await screen.findByTestId("dimension-hud");
     expect(screen.getByTestId("util-dimension")).toBeInTheDocument();
   });
 
-  it("renders color and option panels when enabled", () => {
+  it("renders color and option panels when enabled", async () => {
     act(() => {
       useBuilderStore.setState((state) => ({
         ...state,
@@ -43,11 +43,11 @@ describe("ConfiguratorShell composition", () => {
       }));
     });
     renderShell({ color: true, option: true });
-    expect(screen.getByTestId("panel-product-color")).toBeInTheDocument();
+    await screen.findByTestId("panel-product-color");
     expect(screen.getByTestId("option-panel")).toBeInTheDocument();
   });
 
-  it("auto enables ai suggestions when catalog requested", () => {
+  it("auto enables ai suggestions when catalog requested", async () => {
     act(() => {
       useBuilderStore.setState((state) => ({
         ...state,
@@ -55,7 +55,7 @@ describe("ConfiguratorShell composition", () => {
       }));
     });
     renderShell({ aiCatalog: true });
-    expect(screen.getByTestId("ai-catalog-card")).toBeInTheDocument();
+    await screen.findByTestId("ai-catalog-card");
     expect(screen.getByTestId("ai-suggestions-chips")).toBeInTheDocument();
   });
 });

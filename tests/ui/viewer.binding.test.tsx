@@ -1,22 +1,32 @@
-import { describe, it, beforeEach, afterEach, expect } from "vitest";
+import { describe, it, beforeEach, afterEach, expect, beforeAll, afterAll, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ViewerSceneProvider } from "@/components/viewer/SceneCanvas";
 import ColorPanel from "@/components/panels/ColorPanel";
 import OptionPanel from "@/components/panels/OptionPanel";
 import SceneCanvas from "@/components/viewer/SceneCanvas";
-import { useBuilderStore } from "@/lib/store/builder";
+import { useBuilderStore, type FeatureKey } from "@/lib/store/builder";
 import { useRuntimeStore } from "@/lib/store/runtime";
 
-function enable(key: Parameters<typeof useBuilderStore.setState>[0]["toggles"] extends infer T ? keyof T : never) {
+function enable(key: FeatureKey) {
   act(() => {
-    useBuilderStore.setState((state) => ({
-      ...state,
-      toggles: { ...state.toggles, [key]: true },
-    }));
+    useBuilderStore.getState().setToggle(key, true);
   });
 }
 
 describe("Viewer bindings", () => {
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeAll(() => {
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    errorSpy.mockRestore();
+    warnSpy.mockRestore();
+  });
+
   beforeEach(() => {
     act(() => useBuilderStore.getState().reset());
   });
@@ -57,5 +67,20 @@ describe("Viewer bindings", () => {
 
     const canvas = screen.getByTestId("scene-canvas");
     expect(canvas.dataset.optionSpoiler).toBe("true");
+  });
+
+  it("updates scene background when runtime store changes", () => {
+    render(
+      <ViewerSceneProvider>
+        <SceneCanvas />
+      </ViewerSceneProvider>
+    );
+
+    const canvas = screen.getByTestId("scene-canvas");
+    act(() => {
+      useRuntimeStore.getState().setBackgroundColor("#0ea5e9");
+    });
+
+    expect(canvas).toHaveStyle({ backgroundColor: "#0ea5e9" });
   });
 });

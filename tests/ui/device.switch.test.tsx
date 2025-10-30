@@ -54,7 +54,7 @@ describe("Device switch accessibility", () => {
 
     expect(screen.getByTestId("fps-alert")).toBeInTheDocument();
     act(() => {
-      vi.runAllTimers();
+      vi.advanceTimersByTime(VIEWPORT_TRANSITION_MS);
     });
   });
 });

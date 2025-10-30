@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import ConfiguratorShell from "@/components/cpq/ConfiguratorShell";
 import { useBuilderStore } from "@/lib/store/builder";
@@ -6,6 +6,19 @@ import { useBuilderStore } from "@/lib/store/builder";
 const renderShell = (toggles: Record<string, boolean>) => render(<ConfiguratorShell toggles={toggles} />);
 
 describe("ConfiguratorShell layout", () => {
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeAll(() => {
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    errorSpy.mockRestore();
+    warnSpy.mockRestore();
+  });
+
   beforeEach(() => {
     act(() => useBuilderStore.getState().reset());
     document.body.innerHTML = "";
@@ -19,7 +32,9 @@ describe("ConfiguratorShell layout", () => {
     renderShell({});
     expect(screen.getByTestId("config-shell")).toBeInTheDocument();
     expect(screen.getByTestId("shell-viewer")).toBeInTheDocument();
-    expect(screen.getByTestId("shell-panels")).toBeInTheDocument();
+    const panelContainer = screen.getByTestId("shell-panels");
+    expect(panelContainer).toBeInTheDocument();
+    expect(panelContainer).toHaveAttribute("aria-hidden", "true");
     const canvas = await screen.findAllByTestId("scene-canvas");
     expect(canvas).toHaveLength(1);
   });
@@ -35,16 +50,11 @@ describe("ConfiguratorShell layout", () => {
 
   it("renders panels inside panel container", async () => {
     act(() => {
-      useBuilderStore.setState((state) => ({
-        ...state,
-        toggles: {
-          ...state.toggles,
-          color: true,
-          option: true,
-          preset: true,
-          aiCatalog: true,
-        },
-      }));
+      const builder = useBuilderStore.getState();
+      builder.setToggle("color", true);
+      builder.setToggle("option", true);
+      builder.setToggle("preset", true);
+      builder.setToggle("aiCatalog", true);
     });
     renderShell({ color: true, option: true, preset: true, aiCatalog: true });
     await screen.findByTestId("scene-canvas");

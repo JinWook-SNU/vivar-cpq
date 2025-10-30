@@ -4,32 +4,29 @@ import DimensionHUD from "@/components/viewer/DimensionHUD";
 import FullscreenButton from "@/components/viewer/FullscreenButton";
 import ScreenshotButton from "@/components/viewer/ScreenshotButton";
 import ARButton from "@/components/viewer/ARButton";
-import { useBuilderStore } from "@/lib/store/builder";
+import { useBuilderStore, type FeatureKey } from "@/lib/store/builder";
 
-function enableToggle(key: keyof ReturnType<typeof useBuilderStore>["toggles"]) {
+function enableToggle(key: FeatureKey) {
   act(() => {
-    useBuilderStore.setState((state) => ({
-      ...state,
-      toggles: { ...state.toggles, [key]: true },
-    }));
+    useBuilderStore.getState().setToggle(key, true);
   });
 }
 
 describe("Viewer utilities", () => {
-beforeEach(() => {
-  act(() => {
-    useBuilderStore.getState().reset();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    act(() => {
+      useBuilderStore.getState().reset();
+    });
   });
-  vi.restoreAllMocks();
-});
 
-afterEach(() => {
-  act(() => {
-    useBuilderStore.getState().reset();
+  afterEach(() => {
+    act(() => {
+      useBuilderStore.getState().reset();
+    });
+    vi.restoreAllMocks();
+    document.body.innerHTML = "";
   });
-  vi.restoreAllMocks();
-  document.body.innerHTML = "";
-});
 
   it("renders dimension HUD when toggle enabled", () => {
     enableToggle("dimension");
@@ -51,8 +48,7 @@ afterEach(() => {
     enableToggle("screenshot");
     const canvas = document.createElement("canvas");
     const toDataURL = vi.fn().mockReturnValue("data:image/png;base64,xyz");
-    // @ts-expect-error override for test
-    canvas.toDataURL = toDataURL;
+    (canvas as HTMLCanvasElement & { toDataURL: () => string }).toDataURL = toDataURL;
     document.body.appendChild(canvas);
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
