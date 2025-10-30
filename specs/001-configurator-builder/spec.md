@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-configurator-builder`  
 **Created**: 2025-10-27  
-**Status**: Draft  
+**Status**: Done  
 **Input**: User description: "Create a 'Configurator Builder' that helps non-technical teammates compose a product configurator for sales demos. WHAT - Left pane: a live configurator UI where end users would interact. It shows: (a) utility buttons (dimension overlay, AR, fullscreen, screenshot), (b) a 3D product view, (c) a small panel to change product color and attach options, and (d) a price box with a purchase button. - Right pane: a builder tab for sales/PMs to choose which features the left pane exposes. The builder can enable/disable features (dimension, AR, fullscreen, screenshot, color, options, presets, AI suggestions, AI catalog). Each change immediately updates the left pane's visible controls and behavior. - The builder tab also shows a live estimate of development cost and monthly maintenance cost that updates whenever features change. WHY - In sales meetings, we need instant demo + instant quote. Toggling features must reflect in the live UX and in the budget, so prospects understand scope-versus-cost tradeoffs immediately. SCOPE - Include: feature toggles, live updates to the left UI, simple AR/screenshot placeholders, and real-time cost estimation. - Exclude (for now): full e-commerce flows, real AR asset pipelines, authentication, and analytics. SUCCESS - A user can toggle a feature and see (1) the left UI change and (2) the estimate change within a moment."
 
 ## Overview
@@ -45,6 +45,12 @@ Enable sales and product marketing teammates to assemble a demo-ready product co
 - Q: How should customer-supplied 3D assets behave? → A: 고객이 three.js 호환 파일(GLB, glTF, OBJ 등)을 업로드하면 즉시 미리 보기로 반영하고, 자산이 없거나 업로드 실패 시에는 기본 박스 플레이스홀더를 유지한다.
 - Q: What scene and interface customization controls does the builder require? → A: 우측 빌더에서 3D 배경·조명 등의 간단한 환경 설정과 인터페이스 다크/라이트 모드 전환을 즉시 적용할 수 있어야 한다.
 - Q: How should the demo represent device form factors? → A: 데모는 브라우저 프레임 형태 안에서 동작하고, 데스크탑·모바일 모드를 토글해 각각 최적화된 UI를 즉시 보여줘야 한다.
+
+## Follow-ups
+
+- UI polish
+- Export template
+- Admin/CMS integration
 
 ## User Scenarios & Testing *(mandatory)*
 

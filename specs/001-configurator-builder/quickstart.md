@@ -48,11 +48,9 @@ Push to `main` with Vercel Git integration or run `vercel --prod`.
 
 ## Checkpoint
 - **Branch**: `001-configurator-builder`
-- **Status**: M1 complete (toggles, dependency guard with toast, Save/Load, savedAt). Tests on Vitest.
-- **Next**: M2 (Viewer + Pricing loop) covering pricing engine, API, EstimatePanel optimistic updates, retry/backoff/cache, and latency/FPS warnings.
-- M3 consolidated: single ConfiguratorShell renders viewer/panels; duplicate previews removed; left viewer/right panels layout now live.
+- **Status**: Done (M1–M4 base complete; builder + viewer + pricing integration shipped).
 - Viewer utilities + Color/Option binding + Presets complete
-- Next: M4 (Quote packaging & share, Admin mock, Playwright smoke)
+- Follow-ups: UI polish, export template, admin/CMS integration
 
 ## Implementation Notes
 - 2025-10-30
