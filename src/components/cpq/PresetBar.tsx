@@ -3,7 +3,14 @@
 import clsx from "clsx";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { useBuilderStore, type PresetPayload } from "@/lib/store/builder";
+import {
+  useBuilderStore,
+  DEFAULT_COLOR,
+  DEFAULT_OPTIONS,
+  type PresetPayload,
+} from "@/lib/store/builder";
+import { usePricingStore } from "@/lib/store/pricing";
+import { useRuntimeStore } from "@/lib/store/runtime";
 import { PRODUCT_SWATCHES } from "@/components/panels/colorPalettes";
 
 type Preset = PresetPayload & { label: string };
@@ -38,6 +45,9 @@ export default function PresetBar() {
       resetPreset: state.resetPreset,
     }))
   );
+  const requestQuote = usePricingStore((state) => state.requestQuote);
+  const setRuntimeColor = useRuntimeStore((state) => state.setProductColor);
+  const setRuntimeOptions = useRuntimeStore((state) => state.setOptions);
 
   const presets = useMemo(() => PRESETS, []);
 
@@ -45,10 +55,16 @@ export default function PresetBar() {
 
   function handleApply(preset: Preset) {
     applyPreset(preset);
+    setRuntimeColor(preset.color);
+    setRuntimeOptions(preset.options ?? DEFAULT_OPTIONS);
+    requestQuote(useBuilderStore.getState().getActiveFeatures());
   }
 
   function handleReset() {
     resetPreset();
+    setRuntimeColor(DEFAULT_COLOR);
+    setRuntimeOptions(DEFAULT_OPTIONS);
+    requestQuote(useBuilderStore.getState().getActiveFeatures());
   }
 
   return (

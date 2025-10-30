@@ -19,6 +19,11 @@ export function recordLatency(milliseconds: number) {
   }
 }
 
+export function resetLatencyMetrics() {
+  samples.length = 0;
+  notify();
+}
+
 export function subscribeLatency(callback: () => void) {
   subscribers.add(callback);
   return () => {

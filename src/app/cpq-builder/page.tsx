@@ -6,6 +6,7 @@ import FeatureToggles from "@/components/cpq/FeatureToggles";
 import EstimatePanel from "@/components/cpq/EstimatePanel";
 import ConfiguratorShell from "@/components/cpq/ConfiguratorShell";
 import EnvironmentSettings from "@/components/cpq/EnvironmentSettings";
+import ShareLink from "@/components/cpq/ShareLink";
 import { useFpsStatus } from "@/lib/metrics/fps";
 import { useBuilderStore } from "@/lib/store/builder";
 
@@ -122,7 +123,7 @@ export default function Page() {
   return (
     <div className="grid grid-cols-12 gap-4 p-4">
       {/* Left: Live Configurator */}
-      <div className="col-span-8 flex flex-col gap-4 rounded-2xl border p-4">
+      <div className="col-span-12 xl:col-span-8 flex flex-col gap-4 rounded-2xl border p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-neutral-800">Live Configurator Preview</p>
@@ -170,10 +171,14 @@ export default function Page() {
       </div>
 
       {/* Right: Builder */}
-      <div className="col-span-4 flex flex-col gap-4">
+      <div className="col-span-12 xl:col-span-4 flex flex-col gap-4">
         <div className="rounded-2xl border p-4">
           <h2 className="mb-3 font-semibold">Feature Toggles</h2>
           <FeatureToggles />
+        </div>
+        <div className="rounded-2xl border p-4">
+          <h2 className="mb-3 font-semibold">Share Blueprint</h2>
+          <ShareLink />
         </div>
         <div className="rounded-2xl border p-4">
           <EnvironmentSettings />
