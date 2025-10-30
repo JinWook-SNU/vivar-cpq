@@ -2,10 +2,21 @@
 
 import clsx from "clsx";
 import { useEffect, useMemo } from "react";
-import { useBuilderStore } from "@/lib/store/builder";
+import { useBuilderStore, DEFAULT_ENVIRONMENT } from "@/lib/store/builder";
 import { useRuntimeStore } from "@/lib/store/runtime";
 
-const BACKGROUND_SWATCHES = ["#0b1020", "#111827", "#1f2937", "#ffffff", "#f8fafc"] as const;
+const ACCENT_SWATCHES = [
+  "#0b1020", // midnight navy
+  "#1c1b7a", // indigo flare
+  "#5b21b6", // royal violet
+  "#0ea5e9", // neon cyan
+  "#0f766e", // teal glow
+  "#22c55e", // aurora green
+  "#f97316", // sunset orange
+  "#facc15", // golden hour
+  "#ffffff", // pure white
+  "#f5e6ff", // lavender haze
+] as const;
 
 export default function EnvironmentSettings() {
   const backgroundColor = useBuilderStore((state) => state.environment.backgroundColor);
@@ -16,7 +27,14 @@ export default function EnvironmentSettings() {
     setRuntimeBackground(backgroundColor);
   }, [backgroundColor, setRuntimeBackground]);
 
-  const swatches = useMemo(() => BACKGROUND_SWATCHES, []);
+  const swatches = useMemo(() => {
+    const unique = new Map<string, string>();
+    unique.set(DEFAULT_ENVIRONMENT.backgroundColor, DEFAULT_ENVIRONMENT.backgroundColor);
+    ACCENT_SWATCHES.forEach((hex) => {
+      unique.set(hex, hex);
+    });
+    return Array.from(unique.values());
+  }, []);
 
   return (
     <div className="space-y-3" data-testid="builder-env-bg">

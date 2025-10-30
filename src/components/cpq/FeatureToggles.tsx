@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import {
   useBuilderStore,
@@ -12,7 +12,9 @@ import {
   loadBlueprint,
   saveBlueprint,
   toBlueprint,
+  decodeBlueprint,
 } from "@/lib/persist/blueprint";
+import { useSearchParams } from "next/navigation";
 
 const ITEMS: { key: FeatureKey; label: string }[] = [
   { key: "dimension", label: "Dimension" },
@@ -52,6 +54,9 @@ export default function FeatureToggles() {
       }))
     );
   const [status, setStatus] = useState<{ tone: StatusTone; message: string } | null>(null);
+  const searchParams = useSearchParams();
+  const sharedToken = searchParams.get("blueprint");
+  const hasProcessedShare = useRef(false);
 
   function onToggle(key: FeatureKey, on: boolean) {
     const result = applyRules(toggles, { key, on });
@@ -123,6 +128,29 @@ export default function FeatureToggles() {
       }
     }
   }
+
+  useEffect(() => {
+    if (hasProcessedShare.current) return;
+    if (!sharedToken) return;
+    hasProcessedShare.current = true;
+    const sharedBlueprint = decodeBlueprint(sharedToken);
+    if (!sharedBlueprint) {
+      queueMicrotask(() =>
+        setStatus({
+          tone: "error",
+          message: "Unable to load the shared configuration link.",
+        })
+      );
+      return;
+    }
+    loadFromBlueprint(sharedBlueprint);
+    queueMicrotask(() =>
+      setStatus({
+        tone: "info",
+        message: "Loaded shared configuration from link.",
+      })
+    );
+  }, [sharedToken, loadFromBlueprint]);
 
   return (
     <div className="space-y-3">
