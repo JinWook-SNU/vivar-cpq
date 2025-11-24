@@ -1,12 +1,10 @@
 ### What
-- M1 Builder foundations
+<!-- 변경 사항 요약 -->
 
-### References
-- AC: AC-UI-BLD-001 / AC-VALID-001 / AC-PERSIST-001
-- Plan: specs/001-configurator-builder/plan.md
-- Tasks: specs/001-configurator-builder/tasks.md
+### Why
+<!-- 변경 이유 -->
 
-### Demo
-- [ ] Toggle on/off → UI 반영
-- [ ] aiCatalog → aiSuggestions 자동활성
-- [ ] Save/Reload → 복원됨
+### Testing
+- [ ] `npm test` 통과
+- [ ] `npm run typecheck` 통과
+- [ ] 수동 테스트 완료

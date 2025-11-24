@@ -15,6 +15,16 @@ import {
   decodeBlueprint,
 } from "@/lib/persist/blueprint";
 import { useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const ITEMS: { key: FeatureKey; label: string }[] = [
   { key: "dimension", label: "Dimension" },
@@ -153,74 +163,84 @@ export default function FeatureToggles() {
   }, [sharedToken, loadFromBlueprint]);
 
   return (
-    <div className="space-y-3">
-      {status && (
-        <div
-          className={clsx(
-            "rounded-md border px-3 py-2 text-sm",
-            status.tone === "error" && "border-red-300 bg-red-50 text-red-700",
-            status.tone === "info" && "border-amber-300 bg-amber-50 text-amber-700",
-            status.tone === "success" && "border-emerald-300 bg-emerald-50 text-emerald-700"
-          )}
-        >
-          {status.message}
-        </div>
-      )}
-      <div className="space-y-2">
-        {ITEMS.map((it) => (
-          <label key={it.key} className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={!!toggles[it.key]}
-              onChange={(e) => onToggle(it.key, e.currentTarget.checked)}
-            />
-            <span>{it.label}</span>
-          </label>
-        ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-2 pt-2 text-sm">
-        <button
-          type="button"
-          className="rounded-md border border-neutral-300 bg-white px-3 py-1 text-xs font-medium hover:bg-neutral-50"
-          onClick={handleSave}
-          data-testid="save-blueprint"
-        >
-          Save Blueprint
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-neutral-300 bg-white px-3 py-1 text-xs font-medium hover:bg-neutral-50"
-          onClick={handleLoad}
-          data-testid="load-blueprint"
-        >
-          Load Blueprint
-        </button>
-        <span className="ml-auto text-xs text-neutral-500" data-testid="saved-at">
-          {savedLabel}
-        </span>
-      </div>
-      {aiEntrypoints.length > 0 && (
-        <div
-          className="rounded-md border border-neutral-200 bg-neutral-50 p-3"
-          data-testid="ai-entrypoints"
-        >
-          <p className="mb-2 text-xs font-medium text-neutral-600">
-            Preview AI UI stubs in the live pane
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {aiEntrypoints.map((entry) => (
-              <button
-                key={entry.id}
-                type="button"
-                className="rounded-md border border-neutral-300 bg-white px-3 py-1 text-xs font-medium text-neutral-700 transition hover:border-neutral-400 hover:bg-neutral-50"
-                onClick={() => scrollToStub(entry.id)}
-              >
-                {entry.label}
-              </button>
-            ))}
+    <Card>
+      <CardHeader>
+        <CardTitle>Feature Toggles</CardTitle>
+        <CardDescription>
+          Enable or disable interactive modules to tailor the demo experience for this prospect.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {status && (
+          <div
+            className={clsx(
+              "rounded-md border px-3 py-2 text-sm",
+              status.tone === "error" && "border-red-300 bg-red-50 text-red-700",
+              status.tone === "info" && "border-amber-300 bg-amber-50 text-amber-700",
+              status.tone === "success" && "border-emerald-300 bg-emerald-50 text-emerald-700"
+            )}
+          >
+            {status.message}
           </div>
+        )}
+        <div className="space-y-4">
+          {ITEMS.map((it) => (
+            <div key={it.key} className="flex items-center justify-between gap-4">
+              <span className="text-sm text-neutral-700">{it.label}</span>
+              <Switch
+                checked={!!toggles[it.key]}
+                onCheckedChange={(next) => onToggle(it.key, next)}
+                aria-label={it.label}
+              />
+            </div>
+          ))}
         </div>
-      )}
-    </div>
+        <Separator />
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <Button
+            type="button"
+            onClick={handleSave}
+            variant="outline"
+            data-testid="save-blueprint"
+          >
+            Save Blueprint
+          </Button>
+          <Button
+            type="button"
+            onClick={handleLoad}
+            variant="outline"
+            data-testid="load-blueprint"
+          >
+            Load Blueprint
+          </Button>
+          <span className="ml-auto text-xs text-neutral-500" data-testid="saved-at">
+            {savedLabel}
+          </span>
+        </div>
+        <Separator />
+        {aiEntrypoints.length > 0 && (
+          <div
+            className="rounded-md border border-neutral-200 bg-neutral-50 p-3"
+            data-testid="ai-entrypoints"
+          >
+            <p className="mb-2 text-xs font-medium text-neutral-600">
+              Preview AI UI stubs in the live pane
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {aiEntrypoints.map((entry) => (
+                <Button
+                  key={entry.id}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => scrollToStub(entry.id)}
+                >
+                  {entry.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

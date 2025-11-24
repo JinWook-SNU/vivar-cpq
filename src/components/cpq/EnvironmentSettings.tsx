@@ -4,6 +4,15 @@ import clsx from "clsx";
 import { useEffect, useMemo } from "react";
 import { useBuilderStore, DEFAULT_ENVIRONMENT } from "@/lib/store/builder";
 import { useRuntimeStore } from "@/lib/store/runtime";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const ACCENT_SWATCHES = [
   "#0b1020", // midnight navy
@@ -37,37 +46,43 @@ export default function EnvironmentSettings() {
   }, []);
 
   return (
-    <div className="space-y-3" data-testid="builder-env-bg">
-      <div>
-        <h3 className="text-sm font-semibold text-neutral-800">Environment</h3>
-        <p className="text-xs text-neutral-500">Tweak viewer background to match prospect brand.</p>
-      </div>
-      <div className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Background Color</p>
-        <div className="flex flex-wrap gap-2">
-          {swatches.map((swatch) => {
-            const active = backgroundColor.toLowerCase() === swatch.toLowerCase();
-            return (
-              <button
-                key={swatch}
-                type="button"
-                aria-pressed={active}
-                onClick={() => {
-                  setEnvironment({ backgroundColor: swatch });
-                  setRuntimeBackground(swatch);
-                }}
-                className={clsx(
-                  "h-8 w-8 rounded-full border-2 transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-400",
-                  active ? "border-neutral-900" : "border-transparent",
-                  "shadow-sm"
-                )}
-                style={{ backgroundColor: swatch }}
-                aria-label={`Set environment background to ${swatch}`}
-              />
-            );
-          })}
+    <Card>
+      <CardHeader>
+        <CardTitle>Environment</CardTitle>
+        <CardDescription>Tweak the viewer background to match the prospect’s brand palette.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6" data-testid="builder-env-bg">
+        <div className="space-y-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">Background Color</p>
+          <div className="flex flex-wrap gap-3">
+            {swatches.map((swatch) => {
+              const active = backgroundColor.toLowerCase() === swatch.toLowerCase();
+              return (
+                <Button
+                  key={swatch}
+                  type="button"
+                  variant="ghost"
+                  className={clsx(
+                    "h-8 w-8 rounded-full border-2 p-0 transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2",
+                    active ? "border-neutral-900" : "border-transparent"
+                  )}
+                  style={{ backgroundColor: swatch }}
+                  aria-pressed={active}
+                  aria-label={`Set environment background to ${swatch}`}
+                  onClick={() => {
+                    setEnvironment({ backgroundColor: swatch });
+                    setRuntimeBackground(swatch);
+                  }}
+                />
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </div>
+        <Separator decorative />
+        <p className="text-xs text-neutral-500">
+          Changes apply instantly to the viewer shell so you can confirm screenshot readiness without leaving the page.
+        </p>
+      </CardContent>
+    </Card>
   );
 }

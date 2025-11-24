@@ -1,3 +1,4 @@
+import * as React from "react";
 import dynamic from "next/dynamic";
 import clsx from "clsx";
 import { composeVisible } from "@/lib/runtime/composer";
@@ -10,6 +11,7 @@ import ProductColorPanel from "@/components/panels/ProductColorPanel";
 import OptionPanel from "@/components/panels/OptionPanel";
 import PresetBar from "@/components/cpq/PresetBar";
 import AIStubs from "@/components/cpq/AIStubs";
+import { Badge } from "@/components/ui/badge";
 
 function VisibleUtilities({
   showDimension,
@@ -27,7 +29,7 @@ function VisibleUtilities({
   }
 
   return (
-    <div className="pointer-events-none absolute left-4 top-4 flex flex-col gap-2" data-testid="util-group">
+    <div className="pointer-events-none absolute left-0 top-0 flex flex-col gap-2 p-4" data-testid="util-group">
       {showDimension && (
         <div className="pointer-events-auto" data-testid="util-dimension">
           <DimensionHUD />
@@ -67,69 +69,93 @@ const SceneCanvas = dynamic(() => import("@/components/viewer/SceneCanvas"), {
   ),
 });
 
+function BrowserChrome({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-full w-full flex-col overflow-hidden bg-card shadow-lg">
+      <div className="flex items-center gap-4 border-b border-neutral-200 bg-neutral-50 px-5 py-3">
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-red-400" aria-hidden="true" />
+          <span className="h-3 w-3 rounded-full bg-amber-400" aria-hidden="true" />
+          <span className="h-3 w-3 rounded-full bg-emerald-400" aria-hidden="true" />
+        </div>
+        <div className="flex-1 rounded-md bg-white px-4 py-1 text-xs text-neutral-500 shadow-inner">
+          https://demo.vivar-cpq.app/configurator
+        </div>
+      </div>
+      <div className="flex-1 min-h-0">{children}</div>
+    </div>
+  );
+}
+
 export default function ConfiguratorShell({ toggles }: ConfiguratorShellProps) {
   const vm = composeVisible(toggles);
   const hasPanels = Object.values(vm.panels).some(Boolean);
-  const shellLayout = clsx(
-    "grid w-full gap-6",
-    hasPanels
-      ? "md:grid-cols-[minmax(640px,1.7fr)_minmax(320px,1fr)]"
-      : "md:grid-cols-1"
-  );
-  const viewerContainer = clsx(
-    "relative flex h-full min-h-[360px] w-full min-w-[280px] overflow-hidden rounded-2xl border border-neutral-200 bg-white",
-    "md:min-h-[520px] lg:min-h-[600px]"
-  );
 
   return (
     <ViewerSceneProvider>
-      <div className={shellLayout} data-testid="config-shell">
-        <div className={viewerContainer} data-testid="shell-viewer">
-          <SceneCanvas data-testid="scene-canvas" utilities={vm.utilities} />
-          <VisibleUtilities
-            showDimension={vm.utilities.dimension}
-            showFullscreen={vm.utilities.fullscreen}
-            showScreenshot={vm.utilities.screenshot}
-            showAR={vm.utilities.ar}
-          />
-        </div>
+      <BrowserChrome>
+        <div
+          className={clsx(
+            "flex h-full min-h-0 w-full flex-col",
+            hasPanels ? "md:grid md:grid-cols-[minmax(0,1fr)_320px]" : "md:flex"
+          )}
+          data-testid="config-shell"
+        >
+          <div className="relative flex h-full min-h-0 flex-1 flex-col" data-testid="shell-viewer">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-neutral-200">
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-800">Demo Configurator</h2>
+                <p className="text-xs text-neutral-500">Live preview powered by current feature toggles.</p>
+              </div>
+              <Badge variant="success">Live</Badge>
+            </div>
+            <div className="relative flex-1 min-h-[480px] overflow-hidden rounded-none bg-neutral-900/90">
+              <SceneCanvas data-testid="scene-canvas" utilities={vm.utilities} />
+              <VisibleUtilities
+                showDimension={vm.utilities.dimension}
+                showFullscreen={vm.utilities.fullscreen}
+                showScreenshot={vm.utilities.screenshot}
+                showAR={vm.utilities.ar}
+              />
+            </div>
+          </div>
 
-        {hasPanels ? (
-          <div className="flex min-w-[280px] flex-col gap-4" data-testid="shell-panels">
-            {vm.panels.color && <ProductColorPanel />}
-            {vm.panels.options && (
-              <div data-testid="panel-options">
-                <OptionPanel />
-              </div>
-            )}
-            {vm.panels.presets && (
-              <div data-testid="panel-presets">
-                <PresetBar />
-              </div>
-            )}
-            {vm.panels.aiSuggestions && (
-              <div data-testid="panel-ai-suggestions">
-                <AIStubs.Suggestions />
-              </div>
-            )}
-            {vm.panels.aiCatalog && (
-              <div data-testid="panel-ai-catalog">
-                <AIStubs.Catalog />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div
-            aria-hidden="true"
-            className="hidden md:flex md:min-w-[320px] md:flex-col md:items-center md:justify-center md:rounded-2xl md:border md:border-dashed md:border-neutral-200 md:bg-neutral-50 md:p-6"
-            data-testid="shell-panels"
-          >
-            <p className="text-xs text-neutral-500">
-              Enable builder panels to adjust colors, options, and presets.
-            </p>
-          </div>
-        )}
-      </div>
+          {hasPanels ? (
+            <div className="hidden h-full min-h-0 flex-col gap-4 overflow-y-auto border-l border-neutral-200 bg-neutral-50 p-4 md:flex">
+              {vm.panels.color && <ProductColorPanel />}
+              {vm.panels.options && (
+                <div data-testid="panel-options">
+                  <OptionPanel />
+                </div>
+              )}
+              {vm.panels.presets && (
+                <div data-testid="panel-presets">
+                  <PresetBar />
+                </div>
+              )}
+              {vm.panels.aiSuggestions && (
+                <div data-testid="panel-ai-suggestions">
+                  <AIStubs.Suggestions />
+                </div>
+              )}
+              {vm.panels.aiCatalog && (
+                <div data-testid="panel-ai-catalog">
+                  <AIStubs.Catalog />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              aria-hidden="true"
+              className="hidden md:flex md:min-h-0 md:flex-col md:items-center md:justify-center md:border-l md:border-dashed md:border-neutral-200 md:bg-neutral-50 md:px-8"
+            >
+              <p className="text-xs text-neutral-500 text-center leading-relaxed">
+                Enable adjustment tabs to preview color, options, or AI suggestions alongside the demo.
+              </p>
+            </div>
+          )}
+        </div>
+      </BrowserChrome>
     </ViewerSceneProvider>
   );
 }

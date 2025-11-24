@@ -9,6 +9,13 @@ import EnvironmentSettings from "@/components/cpq/EnvironmentSettings";
 import ShareLink from "@/components/cpq/ShareLink";
 import { useFpsStatus } from "@/lib/metrics/fps";
 import { useBuilderStore } from "@/lib/store/builder";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type ViewportMode = "desktop" | "mobile";
 
@@ -86,7 +93,7 @@ export default function Page() {
   const showFpsBadge = warning && isSwitching;
 
   const frameClasses = clsx(
-    "relative mx-auto overflow-hidden rounded-[28px] border border-neutral-200 bg-gradient-to-b from-neutral-50 to-white shadow transition-all ease-out",
+    "relative mx-auto overflow-hidden rounded-[28px] border border-neutral-200 bg-gradient-to-b from-neutral-50 to-white shadow transition-all ease-out w-full h-full",
     VIEWPORTS[mode].frameClass,
     isSwitching && !prefersReducedMotion ? "ring-2 ring-neutral-200" : "ring-1 ring-transparent"
   );
@@ -121,70 +128,66 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="grid grid-cols-12 gap-4 p-4">
-      {/* Left: Live Configurator */}
-      <div className="col-span-12 xl:col-span-8 flex flex-col gap-4 rounded-2xl border p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-neutral-800">Live Configurator Preview</p>
-            <p className="text-xs text-neutral-500">
-              Switch devices to validate layout responsiveness within 300 ms.
-            </p>
+    <div className="h-screen overflow-hidden bg-muted">
+      <div className="flex h-full w-full flex-col gap-6 overflow-hidden lg:flex-row">
+        {/* Left: Live Configurator */}
+        <div className="flex h-full min-h-[480px] flex-1 flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-neutral-800">Live Configurator Preview</p>
+              <p className="text-xs text-neutral-500">
+                Switch devices to validate layout responsiveness within 300 ms.
+              </p>
+            </div>
+            <DeviceSwitch mode={mode} onChange={handleModeChange} />
           </div>
-          <DeviceSwitch mode={mode} onChange={handleModeChange} />
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div
-            id="device-frame"
-            data-testid="device-frame"
-            data-mode={mode}
-            data-transition-ms={VIEWPORT_TRANSITION_MS}
-            className={frameClasses}
-            style={{
-              transitionDuration: prefersReducedMotion ? "0ms" : `${VIEWPORT_TRANSITION_MS}ms`,
-            }}
-          >
-            {showFpsBadge && (
-              <span
-                className="absolute right-4 top-4 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 shadow-sm"
-                data-testid="fps-alert"
-              >
-                FPS {fps}
-              </span>
-            )}
-            <div className={clsx("transition-opacity duration-150", isSwitching ? "opacity-0" : "opacity-100")}>
-              <div
-                ref={shellFocusRef}
-                tabIndex={-1}
-                className={clsx(
-                  "h-full w-full overflow-y-auto focus:outline-none",
-                  "bg-transparent"
-                )}
-                aria-label={mode === "desktop" ? "Desktop configurator preview" : "Mobile configurator preview"}
-                data-device-primary={mode}
-              >
-                <ConfiguratorShell toggles={toggles} />
+          <div className="flex flex-1 items-center justify-center">
+            <div
+              id="device-frame"
+              data-testid="device-frame"
+              data-mode={mode}
+              data-transition-ms={VIEWPORT_TRANSITION_MS}
+              className={frameClasses}
+              style={{
+                transitionDuration: prefersReducedMotion ? "0ms" : `${VIEWPORT_TRANSITION_MS}ms`,
+              }}
+            >
+              {showFpsBadge && (
+                <span
+                  className="absolute right-4 top-4 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 shadow-sm"
+                  data-testid="fps-alert"
+                >
+                  FPS {fps}
+                </span>
+              )}
+              <div className={clsx("transition-opacity duration-150", isSwitching ? "opacity-0" : "opacity-100")}>
+                <div
+                  ref={shellFocusRef}
+                  tabIndex={-1}
+                  className={clsx("h-full w-full overflow-y-auto focus:outline-none", "bg-transparent")}
+                  aria-label={mode === "desktop" ? "Desktop configurator preview" : "Mobile configurator preview"}
+                  data-device-primary={mode}
+                >
+                  <ConfiguratorShell toggles={toggles} />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Right: Builder */}
-      <div className="col-span-12 xl:col-span-4 flex flex-col gap-4">
-        <div className="rounded-2xl border p-4">
-          <h2 className="mb-3 font-semibold">Feature Toggles</h2>
+        {/* Right: Builder */}
+        <div className="flex h-full w-full flex-col gap-6 overflow-y-auto pr-1 lg:w-[360px] lg:flex-none lg:pr-0">
           <FeatureToggles />
-        </div>
-        <div className="rounded-2xl border p-4">
-          <h2 className="mb-3 font-semibold">Share Blueprint</h2>
-          <ShareLink />
-        </div>
-        <div className="rounded-2xl border p-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Share Blueprint</CardTitle>
+              <CardDescription>Create a link that opens this configuration on another device.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <ShareLink />
+            </CardContent>
+          </Card>
           <EnvironmentSettings />
-        </div>
-        <div className="rounded-2xl border p-4">
-          <h2 className="mb-3 font-semibold">Estimate</h2>
           <EstimatePanel />
         </div>
       </div>
