@@ -22,7 +22,7 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
         }}
         type="button"
         className={cn(
-          "relative h-5 w-9 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2",
+          "relative h-5 w-9 rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50",
           checked ? "bg-neutral-900" : "bg-neutral-200",
           className
         )}

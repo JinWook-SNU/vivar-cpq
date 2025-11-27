@@ -60,6 +60,64 @@ npm run typecheck    # TypeScript check without emitting
 - Setup file at `tests/setup.vitest.ts` mocks @react-three/fiber, next/navigation, Canvas API
 - Suppress r3f-related console warnings for lights and meshes in tests
 
+## Design System
+
+### Page Layout
+- **Background**: `bg-gradient-to-br from-slate-50 to-slate-100` for pages
+- **Container**: `container max-w-5xl mx-auto py-12 px-4`
+- **Spacing**: Use `space-y-*` for vertical stacking, `gap-*` for grids
+
+### Card Patterns
+- **Emphasis cards**: `border-2` for important sections
+- **Interactive cards**: Add `hover:border-primary/50 transition-colors`
+- **Card headers with icons**:
+  ```tsx
+  <CardHeader className="bg-slate-50/50">
+    <div className="flex items-center gap-3">
+      <div className="p-2 bg-primary/10 rounded-lg">
+        <Icon className="size-5 text-primary" />
+      </div>
+      <div>
+        <CardTitle>Title</CardTitle>
+        <CardDescription>Description</CardDescription>
+      </div>
+    </div>
+  </CardHeader>
+  ```
+
+### Form Controls
+- **Toggle rows**: Clickable div wrapping Switch with label + description
+  ```tsx
+  <div
+    className="flex items-center justify-between p-4 border rounded-lg bg-white cursor-pointer hover:bg-slate-50 transition-colors"
+    onClick={() => toggle()}
+  >
+    <div className="space-y-0.5">
+      <Label className="cursor-pointer">Label</Label>
+      <p className="text-sm text-muted-foreground">Description</p>
+    </div>
+    <Switch checked={value} onCheckedChange={toggle} />
+  </div>
+  ```
+- **Inputs/Selects**: Use `h-11` for consistent height
+
+### Typography
+- **Page title**: `text-3xl font-semibold` centered with Badge above
+- **Descriptions**: `text-muted-foreground`
+- **Required fields**: `<span className="text-destructive">*</span>`
+
+### Interactive States
+- All clickable elements must have `cursor-pointer`
+- Hover effects on borders: `hover:border-primary/50`
+- Hover effects on backgrounds: `hover:bg-slate-50`
+- Disabled states: `disabled:cursor-not-allowed disabled:opacity-50`
+
+### Color Usage
+- **Primary actions**: Default button (dark background)
+- **Secondary actions**: Outline or secondary variant
+- **Success feedback**: `border-green-200 bg-green-50 text-green-800`
+- **Info badges**: `bg-primary/10 text-primary`
+
 ## Development Guidelines
 
 - Never commit secrets. Use `process.env` / `.env.local`

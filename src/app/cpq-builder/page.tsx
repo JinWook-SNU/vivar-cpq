@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import FeatureToggles from "@/components/cpq/FeatureToggles";
 import EstimatePanel from "@/components/cpq/EstimatePanel";
@@ -177,7 +177,9 @@ export default function Page() {
 
         {/* Right: Builder */}
         <div className="flex h-full w-full flex-col gap-6 overflow-y-auto pr-1 lg:w-[360px] lg:flex-none lg:pr-0">
-          <FeatureToggles />
+          <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted" />}>
+            <FeatureToggles />
+          </Suspense>
           <Card>
             <CardHeader>
               <CardTitle>Share Blueprint</CardTitle>
