@@ -13,7 +13,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { Upload, CheckCircle2, Building2, Package, Settings, Zap, FileText, LayoutDashboard, Pencil, Sparkles, Loader2, X, FileBox, HardDrive, FileType, AlertTriangle, AlertCircle, Wrench, Server, Ticket, Shield, Home, ArrowLeft } from "lucide-react"
+import { Upload, CheckCircle2, Building2, Package, Settings, Zap, FileText, LayoutDashboard, Pencil, Sparkles, Loader2, X, FileBox, HardDrive, FileType, AlertTriangle, AlertCircle, Wrench, Server, Ticket, Shield, Home, ArrowLeft, Wand2 } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -123,6 +124,9 @@ export interface SurveyFormData {
   presetAddition: boolean
   campaignMode: boolean
   complianceCheck: boolean
+  // AI 실사 렌더링
+  aiRealisticRendering: boolean
+  aiRenderingImagesPerYear: number // 연간 생성 이미지 수 (만 장 단위)
   userSeats: string
   quotingRule: string
   has3DFile: boolean
@@ -172,6 +176,8 @@ export function ConfiguratorSurvey({ onSubmit }: ConfiguratorSurveyProps) {
     presetAddition: false,
     campaignMode: false,
     complianceCheck: false,
+    aiRealisticRendering: false,
+    aiRenderingImagesPerYear: 1, // 기본 1만장
     userSeats: "",
     quotingRule: "",
     has3DFile: false,
@@ -295,6 +301,7 @@ export function ConfiguratorSurvey({ onSubmit }: ConfiguratorSurveyProps) {
     if (formData.presetAddition) features.push("프리셋")
     if (formData.campaignMode) features.push("캠페인 모드")
     if (formData.complianceCheck) features.push("규정 검토")
+    if (formData.aiRealisticRendering) features.push(`AI 실사 렌더링 (연간 ${formData.aiRenderingImagesPerYear}만장)`)
     return features
   }
 
@@ -1288,6 +1295,118 @@ export function ConfiguratorSurvey({ onSubmit }: ConfiguratorSurveyProps) {
                 checked={formData.complianceCheck}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, complianceCheck: checked }))}
               />
+            </div>
+
+            {/* AI 실사 렌더링 */}
+            <div className="space-y-4">
+              <div
+                className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                  formData.aiRealisticRendering
+                    ? "border-violet-300 bg-violet-50"
+                    : "bg-white hover:bg-slate-50"
+                }`}
+              >
+                <div className="space-y-0.5">
+                  <Label htmlFor="aiRendering" className="cursor-pointer flex items-center gap-2">
+                    <Wand2 className="size-4 text-violet-600" />
+                    AI 실사 렌더링
+                    <Badge variant="secondary" className="bg-violet-100 text-violet-700 text-xs">
+                      NEW
+                    </Badge>
+                  </Label>
+                  <p className="text-sm text-muted-foreground">AI 기반 고품질 실사 이미지 생성</p>
+                </div>
+                <Switch
+                  id="aiRendering"
+                  checked={formData.aiRealisticRendering}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, aiRealisticRendering: checked }))}
+                />
+              </div>
+
+              {formData.aiRealisticRendering && (
+                <div className="ml-4 p-4 border-2 border-violet-200 rounded-lg bg-violet-50/50 space-y-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>연간 생성 이미지 수</Label>
+                      <span className="font-semibold text-violet-700">
+                        {formData.aiRenderingImagesPerYear}만장
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      1만장당 연간 유지비 250만원이 추가됩니다
+                    </p>
+                  </div>
+
+                  {/* 5만장 미만: 슬라이더 */}
+                  {formData.aiRenderingImagesPerYear < 5 && (
+                    <div className="space-y-3">
+                      <Slider
+                        value={[formData.aiRenderingImagesPerYear]}
+                        onValueChange={(value: number[]) => setFormData(prev => ({ ...prev, aiRenderingImagesPerYear: value[0] }))}
+                        min={1}
+                        max={4}
+                        step={1}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>1만장</span>
+                        <span>2만장</span>
+                        <span>3만장</span>
+                        <span>4만장</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-sm text-violet-600 hover:text-violet-800 underline"
+                        onClick={() => setFormData(prev => ({ ...prev, aiRenderingImagesPerYear: 5 }))}
+                      >
+                        5만장 이상 직접 입력
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 5만장 이상: 직접 입력 */}
+                  {formData.aiRenderingImagesPerYear >= 5 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={5}
+                          value={formData.aiRenderingImagesPerYear}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            aiRenderingImagesPerYear: Math.max(5, parseInt(e.target.value) || 5)
+                          }))}
+                          className="w-24 h-10"
+                        />
+                        <span className="text-sm text-muted-foreground">만장</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-sm text-violet-600 hover:text-violet-800 underline"
+                        onClick={() => setFormData(prev => ({ ...prev, aiRenderingImagesPerYear: 1 }))}
+                      >
+                        슬라이더로 선택
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="p-3 bg-violet-100 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-violet-800">예상 연간 유지비</span>
+                      <span className="font-bold text-violet-900">
+                        {(formData.aiRenderingImagesPerYear * 250).toLocaleString()}만원
+                      </span>
+                    </div>
+                  </div>
+
+                  <Alert className="border-violet-200 bg-white">
+                    <Wand2 className="size-4 text-violet-600" />
+                    <AlertDescription className="text-violet-800 text-sm">
+                      개발비: AX 개발자 1일 + 서비스 엔지니어 1일이 추가됩니다.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
             </div>
 
             <Separator />

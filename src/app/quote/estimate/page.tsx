@@ -167,6 +167,7 @@ const TASK_DEPENDENCIES: Record<string, string[]> = {
   "프리셋": ["기획 및 플랫폼 베이스 구축"],
   "캠페인 모드": ["기획 및 플랫폼 베이스 구축"],
   "규정 검토": ["기획 및 플랫폼 베이스 구축"],
+  "AI 실사 렌더링": ["기획 및 플랫폼 베이스 구축"],
   "주문 상세 내역 관리": ["기획 및 플랫폼 베이스 구축"],
   "팀 관리": ["기획 및 플랫폼 베이스 구축"],
   "유닛 관리": ["기획 및 플랫폼 베이스 구축"],
@@ -194,6 +195,7 @@ const TASK_PRIORITY: Record<string, number> = {
   "프리셋": 4,
   "캠페인 모드": 5,
   "규정 검토": 5,
+  "AI 실사 렌더링": 5,
   "주문 상세 내역 관리": 4,
   "팀 관리": 4,
   "유닛 관리": 4,
@@ -465,6 +467,14 @@ function getFeatureAllocations(surveyData: Partial<SurveyFormData>): FeatureAllo
     middleFeatures.push({
       name: "규정 검토",
       allocation: { xrDeveloper: 1, systemEngineer: 3, projectManager: 1, designer: 0 }
+    })
+  }
+
+  // AI 실사 렌더링 (AX 개발자 1일 + 서비스 엔지니어 1일)
+  if (surveyData.aiRealisticRendering) {
+    middleFeatures.push({
+      name: "AI 실사 렌더링",
+      allocation: { xrDeveloper: 1, systemEngineer: 1, projectManager: 0, designer: 0 }
     })
   }
 
@@ -1103,13 +1113,19 @@ export default function EstimatePage() {
         if (!surveyData.maintenancePlan || surveyData.maintenancePlan === "none") return undefined
         const plan = MAINTENANCE_PLANS.find(p => p.id === surveyData.maintenancePlan)
         if (!plan) return undefined
+        // AI 실사 렌더링 유지비
+        const aiRenderingMaintenanceCost = surveyData.aiRealisticRendering
+          ? (surveyData.aiRenderingImagesPerYear ?? 1) * 2500000
+          : 0
         return {
           planName: plan.name,
-          annualCost: plan.annualCost,
+          annualCost: plan.annualCost + aiRenderingMaintenanceCost,
           ticketsPerYear: plan.ticketsPerYear,
           managerHoursPerMonth: plan.managerHoursPerMonth,
           serverCosts: plan.serverCosts,
           firstYearFree: maintenanceFirstYearFree,
+          aiRenderingCost: aiRenderingMaintenanceCost,
+          aiRenderingImages: surveyData.aiRealisticRendering ? surveyData.aiRenderingImagesPerYear : 0,
         }
       })(),
     }
@@ -1892,7 +1908,12 @@ export default function EstimatePage() {
               const monthlyServerCost = Object.values(selectedPlan.serverCosts).reduce((a, b) => a + b, 0)
               const annualServerCost = monthlyServerCost * 12
               const managerCost = selectedPlan.annualCost - annualServerCost
-              const effectiveCost = maintenanceFirstYearFree ? 0 : selectedPlan.annualCost
+              // AI 실사 렌더링 연간 유지비 (1만장당 250만원)
+              const aiRenderingMaintenanceCost = surveyData.aiRealisticRendering
+                ? (surveyData.aiRenderingImagesPerYear ?? 1) * 2500000
+                : 0
+              const totalAnnualCost = selectedPlan.annualCost + aiRenderingMaintenanceCost
+              const effectiveCost = maintenanceFirstYearFree ? 0 : totalAnnualCost
 
               return (
                 <Card className="border-2 border-emerald-200">
@@ -1914,13 +1935,13 @@ export default function EstimatePage() {
                         {maintenanceFirstYearFree ? (
                           <>
                             <p className="text-lg text-muted-foreground line-through">
-                              연 {(selectedPlan.annualCost / 10000).toLocaleString()}만원
+                              연 {(totalAnnualCost / 10000).toLocaleString()}만원
                             </p>
                             <p className="text-2xl font-bold text-emerald-600">1년차 무료</p>
                           </>
                         ) : (
                           <p className="text-2xl font-bold text-emerald-600">
-                            연 {(selectedPlan.annualCost / 10000).toLocaleString()}만원
+                            연 {(totalAnnualCost / 10000).toLocaleString()}만원
                           </p>
                         )}
                       </div>
@@ -2023,10 +2044,16 @@ export default function EstimatePage() {
                         <span className="text-muted-foreground">연간 유지관리 인건비</span>
                         <span>{managerCost.toLocaleString()}원</span>
                       </div>
+                      {aiRenderingMaintenanceCost > 0 && (
+                        <div className="flex justify-between text-sm text-violet-600">
+                          <span>AI 실사 렌더링 (연간 {surveyData.aiRenderingImagesPerYear}만장)</span>
+                          <span>{aiRenderingMaintenanceCost.toLocaleString()}원</span>
+                        </div>
+                      )}
                       <Separator />
                       <div className="flex justify-between font-semibold">
                         <span>연간 유지비 합계</span>
-                        <span className="text-emerald-600">{selectedPlan.annualCost.toLocaleString()}원</span>
+                        <span className="text-emerald-600">{totalAnnualCost.toLocaleString()}원</span>
                       </div>
                     </div>
 
@@ -2049,7 +2076,7 @@ export default function EstimatePage() {
                         </div>
                         {maintenanceFirstYearFree && (
                           <Badge className="bg-emerald-500">
-                            -{selectedPlan.annualCost.toLocaleString()}원
+                            -{totalAnnualCost.toLocaleString()}원
                           </Badge>
                         )}
                       </div>
@@ -2206,6 +2233,11 @@ export default function EstimatePage() {
                 {surveyData?.maintenancePlan && surveyData.maintenancePlan !== "none" && (() => {
                   const selectedPlan = MAINTENANCE_PLANS.find(p => p.id === surveyData.maintenancePlan)
                   if (!selectedPlan) return null
+                  // AI 실사 렌더링 유지비
+                  const aiRenderingCost = surveyData.aiRealisticRendering
+                    ? (surveyData.aiRenderingImagesPerYear ?? 1) * 2500000
+                    : 0
+                  const totalCost = selectedPlan.annualCost + aiRenderingCost
                   return (
                     <>
                       <Separator className="my-4" />
@@ -2216,17 +2248,17 @@ export default function EstimatePage() {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground flex items-center gap-1">
-                            {selectedPlan.name} 플랜
+                            {selectedPlan.name} 플랜{aiRenderingCost > 0 ? " + AI 렌더링" : ""}
                           </span>
                           {maintenanceFirstYearFree ? (
                             <div className="text-right">
                               <span className="text-muted-foreground line-through text-xs mr-2">
-                                {selectedPlan.annualCost.toLocaleString()}원
+                                {totalCost.toLocaleString()}원
                               </span>
                               <span className="font-medium text-emerald-600">1년차 무료</span>
                             </div>
                           ) : (
-                            <span className="font-medium text-emerald-600">{selectedPlan.annualCost.toLocaleString()}원</span>
+                            <span className="font-medium text-emerald-600">{totalCost.toLocaleString()}원</span>
                           )}
                         </div>
                       </div>
