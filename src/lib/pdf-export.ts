@@ -6,6 +6,59 @@ export interface PDFExportOptions {
   filename?: string
 }
 
+// lab(), oklch() 등 지원되지 않는 색상 함수를 RGB로 변환
+function convertUnsupportedColors(element: HTMLElement): void {
+  const allElements = element.querySelectorAll("*")
+  const elementsToProcess = [element, ...Array.from(allElements)] as HTMLElement[]
+
+  elementsToProcess.forEach((el) => {
+    if (!(el instanceof HTMLElement)) return
+
+    const computedStyle = window.getComputedStyle(el)
+
+    // 색상 속성들을 확인하고 변환
+    const colorProperties = [
+      "color",
+      "backgroundColor",
+      "borderColor",
+      "borderTopColor",
+      "borderRightColor",
+      "borderBottomColor",
+      "borderLeftColor",
+      "outlineColor",
+      "textDecorationColor",
+      "fill",
+      "stroke",
+    ]
+
+    colorProperties.forEach((prop) => {
+      const value = computedStyle.getPropertyValue(prop.replace(/([A-Z])/g, "-$1").toLowerCase())
+      if (value && (value.includes("lab(") || value.includes("oklch(") || value.includes("oklab("))) {
+        // 임시 요소를 만들어서 브라우저가 변환한 RGB 값을 가져옴
+        const tempEl = document.createElement("div")
+        tempEl.style.cssText = `${prop.replace(/([A-Z])/g, "-$1").toLowerCase()}: ${value}`
+        document.body.appendChild(tempEl)
+        const converted = window.getComputedStyle(tempEl).getPropertyValue(prop.replace(/([A-Z])/g, "-$1").toLowerCase())
+        document.body.removeChild(tempEl)
+
+        // 변환된 값이 rgb/rgba 형식이면 적용
+        if (converted && (converted.startsWith("rgb") || converted.startsWith("#"))) {
+          el.style.setProperty(prop.replace(/([A-Z])/g, "-$1").toLowerCase(), converted)
+        } else {
+          // 변환 실패 시 기본값 적용
+          if (prop === "backgroundColor") {
+            el.style.backgroundColor = "transparent"
+          } else if (prop === "color") {
+            el.style.color = "#0f172a"
+          } else {
+            el.style.setProperty(prop.replace(/([A-Z])/g, "-$1").toLowerCase(), "transparent")
+          }
+        }
+      }
+    })
+  })
+}
+
 // HTML 요소를 PDF로 내보내기 (한글 지원)
 export async function exportElementToPDF(
   element: HTMLElement,
@@ -25,7 +78,7 @@ export async function exportElementToPDF(
   const margin = 0 // 마진은 컴포넌트에서 처리
 
   // html2canvas로 요소 캡처
-  // onclone을 사용하여 클론된 요소의 부모 스타일을 초기화 (oklch 색상 호환성 문제 해결)
+  // onclone을 사용하여 클론된 요소의 색상을 html2canvas가 지원하는 형식으로 변환
   const canvas = await html2canvas(element, {
     scale: 2, // 고해상도
     useCORS: true,
@@ -45,6 +98,9 @@ export async function exportElementToPDF(
       clonedDoc.body.style.backgroundColor = "#ffffff"
       clonedDoc.body.style.color = "#0f172a"
       clonedDoc.documentElement.style.backgroundColor = "#ffffff"
+
+      // lab(), oklch() 등 지원되지 않는 색상 함수 변환
+      convertUnsupportedColors(clonedElement)
     },
   })
 
