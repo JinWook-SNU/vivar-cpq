@@ -90,6 +90,57 @@ function sanitizeInlineStyles(element: HTMLElement, clonedDoc: Document): void {
   })
 }
 
+// 모든 요소에 인라인 스타일로 computed color 적용
+function applyInlineColors(element: HTMLElement): Map<HTMLElement, string> {
+  const originalStyles = new Map<HTMLElement, string>()
+  const allElements = [element, ...Array.from(element.querySelectorAll("*"))] as HTMLElement[]
+
+  const colorProperties = [
+    "color",
+    "background-color",
+    "border-color",
+    "border-top-color",
+    "border-right-color",
+    "border-bottom-color",
+    "border-left-color",
+    "outline-color",
+  ]
+
+  allElements.forEach((el) => {
+    if (!(el instanceof HTMLElement)) return
+
+    try {
+      // 원본 인라인 스타일 저장
+      originalStyles.set(el, el.getAttribute("style") || "")
+
+      const computedStyle = window.getComputedStyle(el)
+
+      colorProperties.forEach((prop) => {
+        const value = computedStyle.getPropertyValue(prop)
+        if (value) {
+          // computed style은 이미 rgb로 변환되어 있음
+          el.style.setProperty(prop, value, "important")
+        }
+      })
+    } catch {
+      // 무시
+    }
+  })
+
+  return originalStyles
+}
+
+// 원본 인라인 스타일 복원
+function restoreInlineStyles(originalStyles: Map<HTMLElement, string>): void {
+  originalStyles.forEach((style, el) => {
+    if (style) {
+      el.setAttribute("style", style)
+    } else {
+      el.removeAttribute("style")
+    }
+  })
+}
+
 // HTML 요소를 PDF로 내보내기 (한글 지원)
 export async function exportElementToPDF(
   element: HTMLElement,
@@ -108,60 +159,67 @@ export async function exportElementToPDF(
   const pageHeight = pdf.internal.pageSize.getHeight()
   const margin = 0 // 마진은 컴포넌트에서 처리
 
-  // html2canvas로 요소 캡처
-  // ignoreElements 옵션으로 불필요한 요소 제외하고
-  // onclone에서 색상 변환 처리
-  const canvas = await html2canvas(element, {
-    scale: 2, // 고해상도
-    useCORS: true,
-    logging: false,
-    backgroundColor: "#ffffff",
-    windowWidth: element.scrollWidth,
-    windowHeight: element.scrollHeight,
-    onclone: (clonedDoc, clonedElement) => {
-      // 클론된 요소의 모든 부모 요소에 기본 배경색 적용
-      let parent = clonedElement.parentElement
-      while (parent) {
-        parent.style.backgroundColor = "#ffffff"
-        parent.style.color = "#0f172a"
-        parent = parent.parentElement
-      }
-      // body와 html에도 적용
-      clonedDoc.body.style.backgroundColor = "#ffffff"
-      clonedDoc.body.style.color = "#0f172a"
-      clonedDoc.documentElement.style.backgroundColor = "#ffffff"
+  // html2canvas 실행 전에 모든 요소에 인라인 스타일로 색상 적용
+  // (computed style은 이미 브라우저가 rgb로 변환함)
+  const originalStyles = applyInlineColors(element)
 
-      // 스타일시트에서 지원되지 않는 색상 함수 제거
-      sanitizeStyleSheets(clonedDoc)
+  try {
+    // html2canvas로 요소 캡처
+    const canvas = await html2canvas(element, {
+      scale: 2, // 고해상도
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
+      onclone: (clonedDoc, clonedElement) => {
+        // 클론된 요소의 모든 부모 요소에 기본 배경색 적용
+        let parent = clonedElement.parentElement
+        while (parent) {
+          parent.style.backgroundColor = "#ffffff"
+          parent.style.color = "#0f172a"
+          parent = parent.parentElement
+        }
+        // body와 html에도 적용
+        clonedDoc.body.style.backgroundColor = "#ffffff"
+        clonedDoc.body.style.color = "#0f172a"
+        clonedDoc.documentElement.style.backgroundColor = "#ffffff"
 
-      // 인라인 스타일에서 지원되지 않는 색상 함수 변환
-      sanitizeInlineStyles(clonedElement, clonedDoc)
-    },
-  })
+        // 스타일시트에서 지원되지 않는 색상 함수 제거
+        sanitizeStyleSheets(clonedDoc)
 
-  const imgData = canvas.toDataURL("image/png")
-  const imgWidth = pageWidth - margin * 2
-  const imgHeight = (canvas.height * imgWidth) / canvas.width
+        // 인라인 스타일에서 지원되지 않는 색상 함수 변환
+        sanitizeInlineStyles(clonedElement, clonedDoc)
+      },
+    })
 
-  // 페이지당 높이 계산
-  const pageContentHeight = pageHeight - margin * 2
-  let heightLeft = imgHeight
-  let position = margin
+    const imgData = canvas.toDataURL("image/png")
+    const imgWidth = pageWidth - margin * 2
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-  // 첫 페이지 추가
-  pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight)
-  heightLeft -= pageContentHeight
+    // 페이지당 높이 계산
+    const pageContentHeight = pageHeight - margin * 2
+    let heightLeft = imgHeight
+    let position = margin
 
-  // 여러 페이지 처리
-  while (heightLeft > 0) {
-    position = heightLeft - imgHeight + margin
-    pdf.addPage()
+    // 첫 페이지 추가
     pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight)
     heightLeft -= pageContentHeight
-  }
 
-  // PDF 저장
-  pdf.save(filename)
+    // 여러 페이지 처리
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight + margin
+      pdf.addPage()
+      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight)
+      heightLeft -= pageContentHeight
+    }
+
+    // PDF 저장
+    pdf.save(filename)
+  } finally {
+    // 원본 인라인 스타일 복원
+    restoreInlineStyles(originalStyles)
+  }
 }
 
 // PDF 데이터 인터페이스 (PrintView 컴포넌트용)
