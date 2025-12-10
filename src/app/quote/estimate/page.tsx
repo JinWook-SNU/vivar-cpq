@@ -792,7 +792,12 @@ export default function EstimatePage() {
 
   useEffect(() => {
     const stored = sessionStorage.getItem("surveyData")
-    if (stored) {
+    if (!stored) {
+      router.push("/quote")
+      return
+    }
+
+    try {
       const data = JSON.parse(stored)
       setSurveyData(data)
       setEstimate(calculateEstimate(data))
@@ -816,7 +821,11 @@ export default function EstimatePage() {
           setFile3DAnalysis(analysis)
         }
       }
-    } else {
+    } catch (error) {
+      console.error("Survey data parsing failed", error)
+      sessionStorage.removeItem("surveyData")
+      sessionStorage.removeItem("aiAnalysis")
+      sessionStorage.removeItem("file3DAnalysis")
       router.push("/quote")
     }
   }, [router])
