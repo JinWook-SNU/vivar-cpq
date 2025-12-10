@@ -1,35 +1,47 @@
 import "server-only"
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
-// 서버 라우트에서는 반드시 SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY 사용
-// public 키로 fallback하지 않음 (프로덕션 보안)
-const supabaseUrl = process.env.SUPABASE_URL
+// 서버 라우트 환경변수 (권장: service role key 사용)
+// fallback: public 키 (보안 경고 출력)
+const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 // 환경변수 검증 상태
 let envValidated = false
 
-// 환경변수 검증 - 서버 라우트에서 Supabase 필요 시 fail-fast
+// 환경변수 검증 - 서버 라우트에서 Supabase 필요 시 경고
 function validateSupabaseEnv(): void {
   if (envValidated) return
 
   if (!supabaseUrl) {
     console.error(
-      "SUPABASE_URL environment variable is not set. " +
-      "Database operations will fail. " +
-      "Set SUPABASE_URL in your environment or .env.local file."
+      "[Supabase] SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) is not set. " +
+      "Database operations will fail."
     )
   }
 
-  if (!supabaseServiceRoleKey) {
+  if (!supabaseServiceRoleKey && supabaseAnonKey) {
+    console.warn(
+      "[Supabase] SUPABASE_SERVICE_ROLE_KEY is not set. " +
+      "Falling back to NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
+      "This is not recommended for production - set SUPABASE_SERVICE_ROLE_KEY for server routes."
+    )
+  }
+
+  if (!supabaseServiceRoleKey && !supabaseAnonKey) {
     console.error(
-      "SUPABASE_SERVICE_ROLE_KEY environment variable is not set. " +
-      "Database operations will fail. " +
-      "Set SUPABASE_SERVICE_ROLE_KEY in your environment or .env.local file."
+      "[Supabase] Neither SUPABASE_SERVICE_ROLE_KEY nor NEXT_PUBLIC_SUPABASE_ANON_KEY is set. " +
+      "Database operations will fail."
     )
   }
 
   envValidated = true
+}
+
+// 사용할 키 결정 (service role 우선, anon key fallback)
+function getSupabaseKey(): string | undefined {
+  return supabaseServiceRoleKey ?? supabaseAnonKey
 }
 
 // Supabase 클라이언트를 lazy하게 초기화
@@ -39,13 +51,14 @@ function getSupabaseClient(): SupabaseClient | null {
   // 환경변수 검증 (최초 1회)
   validateSupabaseEnv()
 
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
+  const key = getSupabaseKey()
+  if (!supabaseUrl || !key) {
     // 환경변수 미설정 시 null 반환 (호출자가 처리)
     return null
   }
 
   if (!_supabase) {
-    _supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    _supabase = createClient(supabaseUrl, key, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
   }
