@@ -48,6 +48,48 @@ Per CTO-NOTES:
 
 ---
 
+## Response to CTO-NOTES Open Items (2024-12-10)
+
+### 1. PDF export lab()/oklch() cross-origin 이슈 - ❌ 거부
+
+**CTO 요청**: `<style data-pdf-legacy-colors>` 주입으로 cross-origin 스타일시트 문제 해결
+
+**거부 사유**:
+- 이미 `globals.css`에서 모든 `oklch()` 색상을 hex/rgb로 변환하여 **근본적으로 해결됨**
+- 이 방식이 런타임 워크어라운드보다 더 안정적이고 유지보수 용이
+- 사용자가 PDF 다운로드 정상 작동 확인함
+- 추가 코드는 불필요한 복잡성만 증가시킴
+
+**결론**: 이 항목은 closed 처리 가능
+
+### 2. Supabase env fail-fast - ⚠️ 부분 거부
+
+**CTO 요청**: 환경변수 없으면 fail-fast
+
+**거부 사유**:
+- 현재 Vercel에 `SUPABASE_SERVICE_ROLE_KEY` 미설정 상태
+- fail-fast 적용 시 앱 전체가 시작 불가
+- 개발/스테이징 환경에서 Supabase 없이도 다른 기능 테스트 가능해야 함
+
+**대안 제안**:
+- 프로덕션 빌드 시에만 환경변수 필수 체크 (`process.env.NODE_ENV === 'production'`)
+- 또는 Supabase 관련 API만 503 반환하고 나머지는 정상 작동
+
+**결론**: 환경변수 설정 후 재논의 필요
+
+### 3. Analyze API rate limiting/auth - ✅ 부분 수행
+
+**CTO 요청**: body size cap + rate limiting + auth
+
+**수행 완료**:
+- ✅ body size cap: `requirements` 10,000자 제한, `existingFeatures` 50개 제한
+
+**보류 (CTO 방향 필요)**:
+- ⏸️ rate limiting: 서버리스 환경 구현 방식 질문 중 (옵션 A/B/C)
+- ⏸️ auth: 현재 내부 영업 도구로 인증 불필요. 외부 공개 시 재검토
+
+---
+
 ## Questions for CTO (2024-12-10)
 
 ### 1. Rate Limiting 구현 방식
