@@ -673,19 +673,19 @@ export function generateEstimateHTML(data: PrintViewData): string {
           <span class="label">인건비 원가</span>
           <span class="value">${data.laborCost.toLocaleString()}원</span>
         </div>
-        <!-- 인건비 하위 항목들 -->
+        <!-- 인건비 하위 항목들 (AI 분석이 있을 때만 표시) -->
+        ${(data.aiAnalysisCost || 0) > 0 ? `
         <div style="border-left:3px solid #e2e8f0;margin-left:8px;padding-left:16px;">
           <div class="cost-row">
             <span class="label" style="color:#64748b;">기본 옵션 개발</span>
-            <span class="value" style="color:#64748b;">${(data.laborCost - data.aiAnalysisCost).toLocaleString()}원</span>
+            <span class="value" style="color:#64748b;">${(data.laborCost - (data.aiAnalysisCost || 0)).toLocaleString()}원</span>
           </div>
-          ${data.aiAnalysisCost > 0 ? `
           <div class="cost-row">
             <span class="label text-purple">추가 요구사항 개발</span>
-            <span class="value text-purple">${data.aiAnalysisCost.toLocaleString()}원</span>
+            <span class="value text-purple">${(data.aiAnalysisCost || 0).toLocaleString()}원</span>
           </div>
-          ` : ''}
         </div>
+        ` : ''}
         <!-- 제경비 -->
         <div class="cost-row">
           <span class="label">제경비 (110%)</span>
