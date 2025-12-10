@@ -1084,21 +1084,34 @@ export default function EstimatePage() {
         qualityGrade: file3DAnalysis.qualityGrade,
         unitCost: file3DAnalysis.cost.unitCost
       } : undefined,
-      aiAnalysis: aiAnalysis ? {
-        summary: aiAnalysis.analysis.summary,
-        complexity: complexityLabels[aiAnalysis.analysis.estimatedComplexity] || aiAnalysis.analysis.estimatedComplexity,
-        tasks: aiAnalysis.analysis.developmentTasks
+      aiAnalysis: aiAnalysis ? (() => {
+        // 포함된 작업들만 필터링
+        const includedTasks = aiAnalysis.analysis.developmentTasks
           .filter((_, index) => !excludedAiTasks.has(index))
-          .map(t => {
-            const taskDailyRate = 350000 // 평균 단가
+
+        // 총 일수 계산
+        const totalTaskDays = includedTasks.reduce((sum, t) => sum + t.estimatedDays, 0)
+
+        // 실제 AI 분석 인건비 (aiCostsData.laborCost는 제외된 작업을 고려한 값)
+        const actualLaborCost = aiCostsData?.laborCost || 0
+
+        return {
+          summary: aiAnalysis.analysis.summary,
+          complexity: complexityLabels[aiAnalysis.analysis.estimatedComplexity] || aiAnalysis.analysis.estimatedComplexity,
+          tasks: includedTasks.map(t => {
+            // 각 작업의 비용은 전체 인건비를 일수 비율로 분배
+            const taskCost = totalTaskDays > 0
+              ? Math.round((t.estimatedDays / totalTaskDays) * actualLaborCost)
+              : 0
             return {
               name: t.name,
               category: t.category,
               days: t.estimatedDays,
-              cost: t.estimatedDays * taskDailyRate
+              cost: taskCost
             }
           })
-      } : undefined,
+        }
+      })() : undefined,
       timeline: timelineData,
       // 할인 정보
       discount: totalDiscount > 0 ? {
