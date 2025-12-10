@@ -242,56 +242,64 @@ export async function exportElementToPDF(
     const pageHeight = pdf.internal.pageSize.getHeight()
     const margin = 0 // 마진은 컴포넌트에서 처리
 
-    // A4 at 96dpi = 794px width
+    // A4 at 96dpi
     const A4_WIDTH_PX = 794
 
-    // html2canvas로 요소 캡처
-    const canvas = await html2canvas(element, {
-      scale: 2, // 고해상도
-      useCORS: true,
-      logging: false,
-      backgroundColor: "#ffffff",
-      width: A4_WIDTH_PX,
-      windowWidth: A4_WIDTH_PX,
-      onclone: (_clonedDoc, clonedElement) => {
-        // 클론된 요소에도 마커 추가
-        clonedElement.setAttribute("data-pdf-print-container", "true")
-        // 명시적 라이트 테마 적용
-        clonedElement.style.backgroundColor = "#ffffff"
-        clonedElement.style.color = "#0f172a"
-        // A4 너비 고정
-        clonedElement.style.width = `${A4_WIDTH_PX}px`
-        clonedElement.style.maxWidth = `${A4_WIDTH_PX}px`
+    // 페이지별 요소 찾기 (직계 자식들이 각각의 페이지)
+    const pageElements = element.children
+    const pageCount = pageElements.length
 
-        // 클론된 요소의 모든 부모 요소에 기본 배경색 적용
-        let parent = clonedElement.parentElement
-        while (parent) {
-          parent.style.backgroundColor = "#ffffff"
-          parent.style.color = "#0f172a"
-          parent = parent.parentElement
-        }
-      },
-    })
+    // 각 페이지를 개별적으로 캡처하여 PDF에 추가
+    for (let i = 0; i < pageCount; i++) {
+      const pageElement = pageElements[i] as HTMLElement
 
-    const imgData = canvas.toDataURL("image/png")
-    const imgWidth = pageWidth - margin * 2
-    const imgHeight = (canvas.height * imgWidth) / canvas.width
+      // 페이지 캡처 - height를 지정하지 않아 요소의 실제 높이 사용
+      const canvas = await html2canvas(pageElement, {
+        scale: 2, // 고해상도 (CTO: 2 정도로 제한)
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        width: A4_WIDTH_PX,
+        windowWidth: A4_WIDTH_PX,
+        onclone: (clonedDoc, clonedElement) => {
+          clonedElement.setAttribute("data-pdf-print-container", "true")
+          clonedElement.style.backgroundColor = "#ffffff"
+          clonedElement.style.color = "#0f172a"
+          clonedElement.style.width = `${A4_WIDTH_PX}px`
+          clonedElement.style.overflow = "visible"
+          // CTO: transform/letter-spacing 기본값 강제
+          clonedElement.style.transform = "none"
+          clonedElement.style.letterSpacing = "normal"
 
-    // 페이지당 높이 계산
-    const pageContentHeight = pageHeight - margin * 2
-    let heightLeft = imgHeight
-    let position = margin
+          // 모든 텍스트 요소에 descender 잘림 방지 스타일 적용
+          const textElements = clonedDoc.querySelectorAll("p, span, td, th, li, h1, h2, h3, h4, h5, h6")
+          textElements.forEach((el) => {
+            const htmlEl = el as HTMLElement
+            htmlEl.style.transform = "none"
+            htmlEl.style.letterSpacing = "normal"
+          })
 
-    // 첫 페이지 추가
-    pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight)
-    heightLeft -= pageContentHeight
+          let parent = clonedElement.parentElement
+          while (parent) {
+            parent.style.backgroundColor = "#ffffff"
+            parent.style.color = "#0f172a"
+            parent.style.overflow = "visible"
+            parent = parent.parentElement
+          }
+        },
+      })
 
-    // 여러 페이지 처리
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight + margin
-      pdf.addPage()
-      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight)
-      heightLeft -= pageContentHeight
+      const imgData = canvas.toDataURL("image/png")
+
+      // 첫 페이지가 아니면 새 페이지 추가
+      if (i > 0) {
+        pdf.addPage()
+      }
+
+      // 캡처된 이미지의 비율 유지하면서 페이지에 맞춤
+      const imgWidth = pageWidth
+      const imgHeight = (canvas.height * pageWidth) / canvas.width
+      pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight)
     }
 
     // PDF 저장
