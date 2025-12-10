@@ -821,6 +821,23 @@ export default function EstimatePage() {
     }
   }, [router])
 
+  // 견적 변경 시 공유 링크 초기화 (할인, 기능 제외 등)
+  useEffect(() => {
+    if (savedQuoteId) {
+      setSavedQuoteId(null)
+      setLinkCopied(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    excludedFeatures.size,
+    excludedAiTasks.size,
+    overheadDiscountEnabled,
+    overheadDiscountRate,
+    techFeeDiscountEnabled,
+    techFeeDiscountRate,
+    maintenanceFirstYearFree,
+  ])
+
   // AI 작업 제외 토글
   const toggleAiTaskExclusion = (index: number) => {
     setExcludedAiTasks(prev => {
