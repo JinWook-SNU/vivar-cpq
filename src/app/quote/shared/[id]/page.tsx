@@ -32,10 +32,12 @@ import {
   RotateCcw,
   Download,
   Loader2,
+  Printer,
+  RefreshCw,
 } from "lucide-react"
-import type { PrintViewData } from "@/components/quote/EstimatePrintView"
+import { EstimatePrintView, type PrintViewData } from "@/components/quote/EstimatePrintView"
 import { calculateCostBreakdown } from "@/lib/quote-calculator"
-import { exportElementToPDF } from "@/lib/pdf-export"
+import { exportElementToPDF, printWithBrowser } from "@/lib/pdf-export"
 
 interface QuoteResponse {
   id: string
@@ -109,6 +111,7 @@ export default function SharedQuotePage({
   const [excludedFeatures, setExcludedFeatures] = useState<Set<number>>(new Set())
   const [excludedAiTasks, setExcludedAiTasks] = useState<Set<number>>(new Set())
   const [isExportingPDF, setIsExportingPDF] = useState(false)
+  const [pdfExportFailed, setPdfExportFailed] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -212,8 +215,8 @@ export default function SharedQuotePage({
     ?.filter((_, index) => excludedAiTasks.has(index))
     .reduce((sum, t) => sum + t.cost, 0) || 0
 
-  // 조정된 인건비 계산 - 공통 유틸리티 사용
-  const adjustedLaborCost = data.laborCost - excludedFeatureCost - excludedAiTaskCost
+  // 조정된 인건비 계산 - 음수 방지 (제외 항목이 원가 초과 시)
+  const adjustedLaborCost = Math.max(0, data.laborCost - excludedFeatureCost - excludedAiTaskCost)
   const adjustedCost = calculateCostBreakdown({
     laborCost: adjustedLaborCost,
     additionalCosts: data.preprocessing3DCost,
@@ -229,51 +232,138 @@ export default function SharedQuotePage({
   const totalExcludedCost = data.totalCost - adjustedTotalCost
   const hasAnyExclusion = hasExclusions || hasAiExclusions
 
+  // PDF 출력용 데이터 (제외 항목 반영)
+  const printViewData: PrintViewData = {
+    companyName: data.companyName,
+    productCategory: data.productCategory,
+    date: new Date(quote.created_at).toLocaleDateString("ko-KR"),
+    totalCost: adjustedTotalCost,
+    featureCount: includedFeatures.length,
+    totalDays: data.totalDays, // TODO: 제외 항목에 따라 조정 필요시 수정
+    teamCount: data.teamCount,
+    laborCost: adjustedLaborCost,
+    overhead: adjustedOverhead,
+    technicalFee: adjustedTechFee,
+    subtotal: adjustedCost.subtotal,
+    vat: adjustedVat,
+    truncationDiscount: adjustedTruncationDiscount,
+    preprocessing3DCost: data.preprocessing3DCost,
+    preprocessing3DUnitCost: data.preprocessing3DUnitCost,
+    productCount: data.productCount,
+    aiAnalysisCost: hasAiExclusions
+      ? (data.aiAnalysisCost || 0) - excludedAiTaskCost
+      : (data.aiAnalysisCost || 0),
+    personnel: data.personnel,
+    features: includedFeatures,
+    file3DAnalysis: data.file3DAnalysis,
+    aiAnalysis: data.aiAnalysis
+      ? {
+          ...data.aiAnalysis,
+          tasks: includedAiTasks,
+        }
+      : undefined,
+    maintenance: data.maintenance,
+    // 제외 항목이 있으면 할인 정보 표시
+    ...(hasAnyExclusion && totalExcludedCost > 0
+      ? {
+          discount: {
+            originalTotal: data.totalCost,
+            totalDiscount: totalExcludedCost,
+            discountPercentage: Math.round((totalExcludedCost / data.totalCost) * 100),
+          },
+        }
+      : {}),
+  }
+
   // PDF 내보내기 핸들러
   const handleExportPDF = async () => {
     if (!printRef.current || isExportingPDF) return
 
     setIsExportingPDF(true)
-    try {
-      // 파일명 생성 (회사명_날짜)
-      const dateStr = new Date(quote.created_at).toISOString().split("T")[0]
-      const filename = `견적서_${data.companyName}_${dateStr}.pdf`
+    setPdfExportFailed(false)
 
-      await exportElementToPDF(printRef.current, { filename })
-    } catch (error) {
-      console.error("PDF 내보내기 실패:", error)
-      alert("PDF 내보내기에 실패했습니다. 다시 시도해주세요.")
-    } finally {
-      setIsExportingPDF(false)
+    // 파일명 생성 (회사명_날짜)
+    const dateStr = new Date(quote.created_at).toISOString().split("T")[0]
+    const filename = `견적서_${data.companyName}_${dateStr}.pdf`
+
+    const result = await exportElementToPDF(printRef.current, { filename })
+
+    setIsExportingPDF(false)
+
+    if (!result.success) {
+      console.error("PDF 내보내기 실패:", result.error)
+      setPdfExportFailed(true)
     }
+  }
+
+  // 브라우저 인쇄 fallback
+  const handleBrowserPrint = () => {
+    setPdfExportFailed(false)
+    printWithBrowser()
+  }
+
+  // 재시도
+  const handleRetryPDF = () => {
+    setPdfExportFailed(false)
+    handleExportPDF()
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4">
       <div className="container max-w-6xl mx-auto">
-        {/* PDF 출력 버튼 */}
-        <div className="flex justify-end mb-4">
-          <Button
-            size="sm"
-            onClick={handleExportPDF}
-            disabled={isExportingPDF}
-          >
-            {isExportingPDF ? (
-              <>
-                <Loader2 className="size-4 mr-2 animate-spin" />
-                내보내는 중...
-              </>
-            ) : (
-              <>
-                <Download className="size-4 mr-2" />
-                PDF 내보내기
-              </>
-            )}
-          </Button>
+        {/* PDF 출력용 숨겨진 A4 레이아웃 */}
+        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+          <EstimatePrintView ref={printRef} data={printViewData} />
         </div>
 
-        {/* PDF 출력 영역 */}
-        <div ref={printRef}>
+        {/* PDF 출력 버튼 영역 */}
+        <div className="flex justify-end mb-4 gap-2 print:hidden">
+          {pdfExportFailed ? (
+            <>
+              {/* 실패 시 fallback UI */}
+              <div className="flex items-center gap-2 text-sm text-amber-600 mr-2">
+                <AlertTriangle className="size-4" />
+                PDF 생성 실패
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRetryPDF}
+              >
+                <RefreshCw className="size-4 mr-2" />
+                다시 시도
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleBrowserPrint}
+              >
+                <Printer className="size-4 mr-2" />
+                브라우저로 인쇄
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              onClick={handleExportPDF}
+              disabled={isExportingPDF}
+            >
+              {isExportingPDF ? (
+                <>
+                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  내보내는 중...
+                </>
+              ) : (
+                <>
+                  <Download className="size-4 mr-2" />
+                  PDF 내보내기
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+
+        {/* 화면 표시용 UI (PDF에 포함되지 않음) */}
+        <div>
           {/* Title */}
           <div className="text-center mb-12">
             <Badge className="mb-4">공유된 견적서</Badge>
@@ -1102,7 +1192,7 @@ export default function SharedQuotePage({
             <p>이 견적서는 VIVAR CPQ 시스템에서 생성되었습니다.</p>
           </div>
         </div>
-        {/* End of printRef */}
+        {/* End of screen UI */}
       </div>
     </div>
   )

@@ -133,18 +133,25 @@ const colors = {
   emerald700: "#047857",
 }
 
+// 페이지 나눔 방지 스타일
+const noBreakStyle: React.CSSProperties = {
+  pageBreakInside: "avoid",
+  breakInside: "avoid",
+}
+
 export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewProps>(
   ({ data }, ref) => {
     return (
       <div
         ref={ref}
         style={{
-          width: "210mm",
-          minHeight: "297mm",
-          padding: "15mm",
+          width: "794px", // A4 at 96dpi
+          minHeight: "1123px", // A4 height at 96dpi
+          padding: "48px", // ~15mm
           fontFamily: "'Pretendard', 'Noto Sans KR', sans-serif",
           backgroundColor: colors.white,
           color: colors.slate900,
+          boxSizing: "border-box",
         }}
       >
         {/* 헤더 */}
@@ -195,9 +202,10 @@ export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewPro
         <div style={{
           marginBottom: "32px",
           padding: "24px",
-          background: `linear-gradient(to right, ${colors.slate800}, ${colors.slate700})`,
+          backgroundColor: colors.slate800, // 그라데이션 대신 단색 (html2canvas 호환)
           color: colors.white,
           borderRadius: "8px",
+          ...noBreakStyle,
         }}>
           <h2 style={{ fontSize: "14px", fontWeight: "500", color: colors.slate300, marginBottom: "8px" }}>
             총 견적 금액
@@ -275,7 +283,7 @@ export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewPro
         </div>
 
         {/* 비용 상세 */}
-        <div style={{ marginBottom: "32px" }}>
+        <div style={{ marginBottom: "32px", ...noBreakStyle }}>
           <h3 style={{
             fontSize: "18px",
             fontWeight: "600",
@@ -368,7 +376,7 @@ export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewPro
         </div>
 
         {/* 포함 기능 */}
-        <div style={{ marginBottom: "32px" }}>
+        <div style={{ marginBottom: "32px", ...noBreakStyle }}>
           <h3 style={{
             fontSize: "18px",
             fontWeight: "600",
@@ -405,7 +413,7 @@ export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewPro
 
         {/* 3D 파일 분석 정보 */}
         {data.file3DAnalysis && (
-          <div style={{ marginBottom: "32px" }}>
+          <div style={{ marginBottom: "32px", ...noBreakStyle }}>
             <h3 style={{
               fontSize: "18px",
               fontWeight: "600",
@@ -447,7 +455,7 @@ export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewPro
 
         {/* AI 분석 결과 */}
         {data.aiAnalysis && (
-          <div style={{ marginBottom: "32px" }}>
+          <div style={{ marginBottom: "32px", ...noBreakStyle }}>
             <h3 style={{
               fontSize: "18px",
               fontWeight: "600",
@@ -510,7 +518,7 @@ export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewPro
 
         {/* 유지비 정보 */}
         {data.maintenance && (
-          <div style={{ marginBottom: "32px" }}>
+          <div style={{ marginBottom: "32px", ...noBreakStyle }}>
             <h3 style={{
               fontSize: "18px",
               fontWeight: "600",
@@ -598,6 +606,7 @@ export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewPro
           backgroundColor: colors.slate50,
           borderRadius: "8px",
           borderLeft: `4px solid ${colors.slate400}`,
+          ...noBreakStyle,
         }}>
           <h4 style={{ fontSize: "14px", fontWeight: "600", marginBottom: "8px", color: colors.slate700 }}>안내사항</h4>
           <ul style={{ fontSize: "13px", color: colors.slate600, paddingLeft: "16px", margin: 0 }}>

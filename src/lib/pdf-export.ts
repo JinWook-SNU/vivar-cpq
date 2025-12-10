@@ -198,12 +198,31 @@ function removeLegacyColorsStyle(style: HTMLStyleElement): void {
   }
 }
 
+// PDF 내보내기 결과 타입
+export interface PDFExportResult {
+  success: boolean
+  error?: Error
+}
+
 // HTML 요소를 PDF로 내보내기 (한글 지원)
 export async function exportElementToPDF(
   element: HTMLElement,
   options: PDFExportOptions = {}
-): Promise<void> {
+): Promise<PDFExportResult> {
   const { filename = "견적서.pdf" } = options
+
+  // 폰트 로딩 대기 (최대 3초)
+  try {
+    await Promise.race([
+      document.fonts.ready,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Font loading timeout")), 3000)
+      ),
+    ])
+  } catch (fontError) {
+    console.warn("[PDF Export] Font loading issue:", fontError)
+    // 폰트 로딩 실패해도 계속 진행
+  }
 
   // 레거시 색상 스타일 주입
   const legacyStyle = injectLegacyColorsStyle()
@@ -223,20 +242,26 @@ export async function exportElementToPDF(
     const pageHeight = pdf.internal.pageSize.getHeight()
     const margin = 0 // 마진은 컴포넌트에서 처리
 
+    // A4 at 96dpi = 794px width
+    const A4_WIDTH_PX = 794
+
     // html2canvas로 요소 캡처
     const canvas = await html2canvas(element, {
       scale: 2, // 고해상도
       useCORS: true,
       logging: false,
       backgroundColor: "#ffffff",
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
+      width: A4_WIDTH_PX,
+      windowWidth: A4_WIDTH_PX,
       onclone: (_clonedDoc, clonedElement) => {
         // 클론된 요소에도 마커 추가
         clonedElement.setAttribute("data-pdf-print-container", "true")
         // 명시적 라이트 테마 적용
         clonedElement.style.backgroundColor = "#ffffff"
         clonedElement.style.color = "#0f172a"
+        // A4 너비 고정
+        clonedElement.style.width = `${A4_WIDTH_PX}px`
+        clonedElement.style.maxWidth = `${A4_WIDTH_PX}px`
 
         // 클론된 요소의 모든 부모 요소에 기본 배경색 적용
         let parent = clonedElement.parentElement
@@ -271,19 +296,26 @@ export async function exportElementToPDF(
 
     // PDF 저장
     pdf.save(filename)
+    return { success: true }
   } catch (error) {
     // html2canvas에서 lab()/oklch() 에러 발생 시 스택 트레이스 출력
-    console.error("PDF export failed:", error)
+    console.error("[PDF Export] Failed:", error)
     if (error instanceof Error) {
-      console.error("Stack trace:", error.stack)
+      console.error("[PDF Export] Stack trace:", error.stack)
+      return { success: false, error }
     }
-    throw error
+    return { success: false, error: new Error(String(error)) }
   } finally {
     // 레거시 색상 스타일 정리
     removeLegacyColorsStyle(legacyStyle)
     // 마커 속성 제거
     element.removeAttribute("data-pdf-print-container")
   }
+}
+
+// 브라우저 인쇄 기능으로 fallback
+export function printWithBrowser(): void {
+  window.print()
 }
 
 // PDF 데이터 인터페이스 (PrintView 컴포넌트용)

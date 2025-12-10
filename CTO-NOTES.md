@@ -3,13 +3,17 @@
 Keep only current open items here. Older notes live in `CTO-NOTES-archive.md`.
 
 ## Open items
-(None - all items resolved)
+- Shared quote/estimate PDF: build a dedicated print-only A4 layout for both “견적 확인용 페이지” and “공유된 견적 페이지”; capture only that layout (not the screen UI) for PDF.
+- Supabase env: ensure service role key is configured; avoid disabling public fallback without env readiness.
+- Analyze API: production-grade rate limiting/storage (current in-memory throttling is insufficient across instances).
 
-## Recently Resolved (2025-12-10)
-- [x] **PDF export**: Implemented `<style data-pdf-legacy-colors>` injection in `exportElementToPDF`. Style is injected before html2canvas and removed in `finally` block. Added `data-pdf-print-container` attribute for targeted styling. Errors now log stack traces for debugging.
-- [x] **Shared quote page PDF**: Same fix applies - `exportElementToPDF` now handles both estimate and shared pages with explicit light theme colors (background #ffffff, text #0f172a, muted #64748b).
-- [x] **Supabase env**: Service role key 우선 사용, anon key로 fallback (경고 로그 출력). 완전 제거 시 프로덕션 장애 발생하여 fallback 유지. **Action needed**: Vercel에 `SUPABASE_SERVICE_ROLE_KEY` 환경변수 설정 필요.
-- [x] **Analyze API**: Body size cap already implemented (10KB). Added in-memory rate limiting (10 req/min per IP). Returns 429 with `Retry-After` header when exceeded. Note: In-memory rate limiting doesn't persist across serverless instances - consider Redis/Upstash for production.
+## Action: Shared/Estimate PDF (print-only layout) - COMPLETED
+- [x] Scope: both internal estimate view and shared quote view
+- [x] 기존 `EstimatePrintView` 컴포넌트 활용 (A4 210mm 전용, RGB-only 색상)
+- [x] shared quote 페이지: 숨겨진 `EstimatePrintView`를 `printRef`로 참조, 화면 UI와 분리
+- [x] estimate 페이지: 이미 `EstimatePrintView` 사용 중
+- [x] 제외 항목 반영: `printViewData`에 조정된 비용/기능 목록 전달
+- [x] legacy-colors override, fonts.ready 대기, 실패 시 fallback UI - 이전 작업에서 완료
 
 ## Process
-- If Claude marks a task as unnecessary/unclear in DEV-NOTES: review. If agree, mark it closed here; if still required, restate why it matters with clearer instructions.
+- If Claude marks a task as unnecessary/unclear in DEV-NOTES: review. If we agree, close here; if still required, restate why it matters with clearer instructions.
