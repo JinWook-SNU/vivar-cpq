@@ -6,53 +6,84 @@ export interface PDFExportOptions {
   filename?: string
 }
 
-// lab(), oklch() 등 지원되지 않는 색상 함수를 RGB로 변환
-function convertUnsupportedColors(element: HTMLElement): void {
-  const allElements = element.querySelectorAll("*")
-  const elementsToProcess = [element, ...Array.from(allElements)] as HTMLElement[]
+// 지원되지 않는 색상 함수 패턴
+const UNSUPPORTED_COLOR_REGEX = /\b(lab|oklch|oklab|lch|color)\s*\([^)]+\)/gi
 
-  elementsToProcess.forEach((el) => {
+// CSS 값에서 지원되지 않는 색상 함수를 대체 색상으로 변환
+function replaceUnsupportedColorInValue(value: string): string | null {
+  if (!UNSUPPORTED_COLOR_REGEX.test(value)) {
+    return null // 변환 불필요
+  }
+  // lab(), oklch() 등이 포함된 경우 기본 색상으로 대체
+  // 투명도가 있는 경우 투명으로, 아니면 기본 색상 사용
+  if (value.includes("/ 0") || value.includes("/0")) {
+    return "transparent"
+  }
+  return value.replace(UNSUPPORTED_COLOR_REGEX, "rgb(15, 23, 42)") // slate-900
+}
+
+// 클론된 문서의 모든 스타일시트에서 지원되지 않는 색상 함수 제거
+function sanitizeStyleSheets(clonedDoc: Document): void {
+  // 모든 스타일시트 순회
+  Array.from(clonedDoc.styleSheets).forEach((styleSheet) => {
+    try {
+      const rules = styleSheet.cssRules || styleSheet.rules
+      if (!rules) return
+
+      Array.from(rules).forEach((rule) => {
+        if (rule instanceof CSSStyleRule) {
+          const style = rule.style
+          for (let i = 0; i < style.length; i++) {
+            const prop = style[i]
+            const value = style.getPropertyValue(prop)
+            if (UNSUPPORTED_COLOR_REGEX.test(value)) {
+              const replacement = replaceUnsupportedColorInValue(value)
+              if (replacement) {
+                style.setProperty(prop, replacement)
+              }
+            }
+          }
+        }
+      })
+    } catch {
+      // CORS로 인해 외부 스타일시트 접근 불가 시 무시
+    }
+  })
+}
+
+// 요소와 모든 자식 요소의 인라인 스타일에서 지원되지 않는 색상 변환
+function sanitizeInlineStyles(element: HTMLElement, clonedDoc: Document): void {
+  const allElements = [element, ...Array.from(element.querySelectorAll("*"))] as HTMLElement[]
+
+  const colorProperties = [
+    "color",
+    "background-color",
+    "border-color",
+    "border-top-color",
+    "border-right-color",
+    "border-bottom-color",
+    "border-left-color",
+    "outline-color",
+    "text-decoration-color",
+    "fill",
+    "stroke",
+    "box-shadow",
+    "text-shadow",
+  ]
+
+  allElements.forEach((el) => {
     if (!(el instanceof HTMLElement)) return
 
-    const computedStyle = window.getComputedStyle(el)
-
-    // 색상 속성들을 확인하고 변환
-    const colorProperties = [
-      "color",
-      "backgroundColor",
-      "borderColor",
-      "borderTopColor",
-      "borderRightColor",
-      "borderBottomColor",
-      "borderLeftColor",
-      "outlineColor",
-      "textDecorationColor",
-      "fill",
-      "stroke",
-    ]
+    // 클론된 문서의 window를 사용하여 computed style 가져오기
+    const computedStyle = clonedDoc.defaultView?.getComputedStyle(el)
+    if (!computedStyle) return
 
     colorProperties.forEach((prop) => {
-      const value = computedStyle.getPropertyValue(prop.replace(/([A-Z])/g, "-$1").toLowerCase())
-      if (value && (value.includes("lab(") || value.includes("oklch(") || value.includes("oklab("))) {
-        // 임시 요소를 만들어서 브라우저가 변환한 RGB 값을 가져옴
-        const tempEl = document.createElement("div")
-        tempEl.style.cssText = `${prop.replace(/([A-Z])/g, "-$1").toLowerCase()}: ${value}`
-        document.body.appendChild(tempEl)
-        const converted = window.getComputedStyle(tempEl).getPropertyValue(prop.replace(/([A-Z])/g, "-$1").toLowerCase())
-        document.body.removeChild(tempEl)
-
-        // 변환된 값이 rgb/rgba 형식이면 적용
-        if (converted && (converted.startsWith("rgb") || converted.startsWith("#"))) {
-          el.style.setProperty(prop.replace(/([A-Z])/g, "-$1").toLowerCase(), converted)
-        } else {
-          // 변환 실패 시 기본값 적용
-          if (prop === "backgroundColor") {
-            el.style.backgroundColor = "transparent"
-          } else if (prop === "color") {
-            el.style.color = "#0f172a"
-          } else {
-            el.style.setProperty(prop.replace(/([A-Z])/g, "-$1").toLowerCase(), "transparent")
-          }
+      const value = computedStyle.getPropertyValue(prop)
+      if (value && UNSUPPORTED_COLOR_REGEX.test(value)) {
+        const replacement = replaceUnsupportedColorInValue(value)
+        if (replacement) {
+          el.style.setProperty(prop, replacement, "important")
         }
       }
     })
@@ -99,8 +130,11 @@ export async function exportElementToPDF(
       clonedDoc.body.style.color = "#0f172a"
       clonedDoc.documentElement.style.backgroundColor = "#ffffff"
 
-      // lab(), oklch() 등 지원되지 않는 색상 함수 변환
-      convertUnsupportedColors(clonedElement)
+      // 스타일시트에서 지원되지 않는 색상 함수 제거
+      sanitizeStyleSheets(clonedDoc)
+
+      // 인라인 스타일에서 지원되지 않는 색상 함수 변환
+      sanitizeInlineStyles(clonedElement, clonedDoc)
     },
   })
 
