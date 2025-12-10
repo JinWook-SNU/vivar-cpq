@@ -141,12 +141,111 @@ function restoreInlineStyles(originalStyles: Map<HTMLElement, string>): void {
   })
 }
 
+// Tailwind v4 CSS 변수를 RGB로 오버라이드하는 스타일 생성
+// html2canvas가 lab()/oklch()를 파싱하기 전에 주입
+const LEGACY_COLOR_OVERRIDES = `
+  :root {
+    --background: 255 255 255 !important;
+    --foreground: 15 23 42 !important;
+    --card: 255 255 255 !important;
+    --card-foreground: 15 23 42 !important;
+    --popover: 255 255 255 !important;
+    --popover-foreground: 15 23 42 !important;
+    --primary: 15 23 42 !important;
+    --primary-foreground: 248 250 252 !important;
+    --secondary: 241 245 249 !important;
+    --secondary-foreground: 15 23 42 !important;
+    --muted: 241 245 249 !important;
+    --muted-foreground: 100 116 139 !important;
+    --accent: 241 245 249 !important;
+    --accent-foreground: 15 23 42 !important;
+    --destructive: 239 68 68 !important;
+    --destructive-foreground: 248 250 252 !important;
+    --border: 226 232 240 !important;
+    --input: 226 232 240 !important;
+    --ring: 15 23 42 !important;
+  }
+  * {
+    color: rgb(15, 23, 42) !important;
+    border-color: rgb(226, 232, 240) !important;
+  }
+  .bg-primary { background-color: rgb(15, 23, 42) !important; }
+  .bg-primary\\/10 { background-color: rgba(15, 23, 42, 0.1) !important; }
+  .text-primary { color: rgb(15, 23, 42) !important; }
+  .text-primary-foreground { color: rgb(248, 250, 252) !important; }
+  .text-muted-foreground { color: rgb(100, 116, 139) !important; }
+  .bg-slate-50 { background-color: rgb(248, 250, 252) !important; }
+  .bg-slate-50\\/50 { background-color: rgba(248, 250, 252, 0.5) !important; }
+  .bg-white { background-color: rgb(255, 255, 255) !important; }
+  .border { border-color: rgb(226, 232, 240) !important; }
+  .bg-purple-50 { background-color: rgb(250, 245, 255) !important; }
+  .bg-purple-50\\/50 { background-color: rgba(250, 245, 255, 0.5) !important; }
+  .bg-purple-100 { background-color: rgb(243, 232, 255) !important; }
+  .text-purple-600 { color: rgb(147, 51, 234) !important; }
+  .text-purple-700 { color: rgb(126, 34, 206) !important; }
+  .text-purple-800 { color: rgb(107, 33, 168) !important; }
+  .bg-cyan-50 { background-color: rgb(236, 254, 255) !important; }
+  .bg-cyan-50\\/50 { background-color: rgba(236, 254, 255, 0.5) !important; }
+  .bg-cyan-100 { background-color: rgb(207, 250, 254) !important; }
+  .text-cyan-600 { color: rgb(8, 145, 178) !important; }
+  .text-cyan-700 { color: rgb(14, 116, 144) !important; }
+  .bg-emerald-50 { background-color: rgb(236, 253, 245) !important; }
+  .bg-emerald-50\\/50 { background-color: rgba(236, 253, 245, 0.5) !important; }
+  .bg-emerald-100 { background-color: rgb(209, 250, 229) !important; }
+  .text-emerald-600 { color: rgb(5, 150, 105) !important; }
+  .text-emerald-700 { color: rgb(4, 120, 87) !important; }
+  .bg-green-50 { background-color: rgb(240, 253, 244) !important; }
+  .bg-green-100 { background-color: rgb(220, 252, 231) !important; }
+  .text-green-500 { color: rgb(34, 197, 94) !important; }
+  .text-green-600 { color: rgb(22, 163, 74) !important; }
+  .text-green-700 { color: rgb(21, 128, 61) !important; }
+  .bg-amber-50 { background-color: rgb(255, 251, 235) !important; }
+  .bg-amber-100 { background-color: rgb(254, 243, 199) !important; }
+  .text-amber-700 { color: rgb(180, 83, 9) !important; }
+  .text-amber-800 { color: rgb(146, 64, 14) !important; }
+  .bg-red-100 { background-color: rgb(254, 226, 226) !important; }
+  .text-red-700 { color: rgb(185, 28, 28) !important; }
+  .bg-blue-100 { background-color: rgb(219, 234, 254) !important; }
+  .text-blue-700 { color: rgb(29, 78, 216) !important; }
+  .text-blue-800 { color: rgb(30, 64, 175) !important; }
+  .bg-orange-100 { background-color: rgb(255, 237, 213) !important; }
+  .text-orange-500 { color: rgb(249, 115, 22) !important; }
+  .text-orange-700 { color: rgb(194, 65, 12) !important; }
+  .text-yellow-500 { color: rgb(234, 179, 8) !important; }
+`
+
+// 레거시 색상 오버라이드 스타일 주입
+function injectLegacyColorOverrides(): HTMLStyleElement {
+  const style = document.createElement("style")
+  style.setAttribute("data-pdf-legacy-colors", "true")
+  style.textContent = LEGACY_COLOR_OVERRIDES
+  document.head.appendChild(style)
+  return style
+}
+
+// 레거시 색상 오버라이드 스타일 제거
+function removeLegacyColorOverrides(style: HTMLStyleElement): void {
+  if (style.parentNode) {
+    style.parentNode.removeChild(style)
+  }
+}
+
 // HTML 요소를 PDF로 내보내기 (한글 지원)
 export async function exportElementToPDF(
   element: HTMLElement,
   options: PDFExportOptions = {}
 ): Promise<void> {
   const { filename = "견적서.pdf" } = options
+
+  // 레거시 색상 오버라이드 스타일 주입 (html2canvas가 lab()/oklch() 파싱 전에)
+  const legacyStyle = injectLegacyColorOverrides()
+
+  // Sanitize global stylesheets before html2canvas parses them
+  try {
+    sanitizeStyleSheets(document)
+  } catch {
+    // ignore cross-origin stylesheets
+  }
 
   // A4 크기 설정 (mm)
   const pdf = new jsPDF({
@@ -219,6 +318,8 @@ export async function exportElementToPDF(
   } finally {
     // 원본 인라인 스타일 복원
     restoreInlineStyles(originalStyles)
+    // 레거시 색상 오버라이드 스타일 제거
+    removeLegacyColorOverrides(legacyStyle)
   }
 }
 
