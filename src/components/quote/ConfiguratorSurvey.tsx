@@ -1159,41 +1159,42 @@ export function ConfiguratorSurvey({ onSubmit }: ConfiguratorSurveyProps) {
           {formData.dashboardEnabled && (
             <CardContent className="pt-6 space-y-4 animate-in fade-in slide-in-from-top-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 필수 항목 - disabled */}
-                <div
-                  className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 opacity-75"
+                <label
+                  htmlFor="orderManagement"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                 >
-                  <span className="text-muted-foreground">주문 상세 내역 관리</span>
+                  <span>주문 상세 내역 관리</span>
                   <Checkbox
                     id="orderManagement"
-                    checked={true}
-                    disabled
+                    checked={formData.dashboard.orderManagement}
+                    onCheckedChange={(checked) => handleDashboardChange("orderManagement", checked as boolean)}
                     className="size-5"
                   />
-                </div>
-                <div
-                  className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 opacity-75"
+                </label>
+                <label
+                  htmlFor="teamManagement"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                 >
-                  <span className="text-muted-foreground">팀 관리</span>
+                  <span>팀 관리</span>
                   <Checkbox
                     id="teamManagement"
-                    checked={true}
-                    disabled
+                    checked={formData.dashboard.teamManagement}
+                    onCheckedChange={(checked) => handleDashboardChange("teamManagement", checked as boolean)}
                     className="size-5"
                   />
-                </div>
-                <div
-                  className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 opacity-75"
+                </label>
+                <label
+                  htmlFor="unitManagement"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                 >
-                  <span className="text-muted-foreground">유닛 관리</span>
+                  <span>유닛 관리</span>
                   <Checkbox
                     id="unitManagement"
-                    checked={true}
-                    disabled
+                    checked={formData.dashboard.unitManagement}
+                    onCheckedChange={(checked) => handleDashboardChange("unitManagement", checked as boolean)}
                     className="size-5"
                   />
-                </div>
-                {/* 선택 항목 */}
+                </label>
                 <label
                   htmlFor="textureManagement"
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
