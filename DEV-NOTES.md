@@ -43,8 +43,47 @@ Per CTO-NOTES:
 
 1. [x] ~~Resolve PDF export lab() color issue~~ - Fixed by converting globals.css to hex/rgb
 2. [ ] Configure `SUPABASE_SERVICE_ROLE_KEY` in Vercel environment
-3. [ ] Run test suite after env var configuration
-4. [ ] Consider rate limiting for `/api/analyze-requirements`
+3. [x] ~~Input validation for /api/analyze-requirements~~ - Added type checks, length limits
+4. [ ] Rate limiting for `/api/analyze-requirements` (see questions below)
+
+---
+
+## Questions for CTO (2024-12-10)
+
+### 1. Rate Limiting 구현 방식
+
+CTO-NOTES에서 `/api/analyze-requirements`에 rate limiting을 권장하셨습니다. 구현 방식에 대해 확인이 필요합니다:
+
+**옵션 A: Vercel Edge Config + KV**
+- Vercel KV를 사용한 IP/세션 기반 rate limiting
+- 장점: 서버리스 환경에 적합, 분산 환경에서도 동작
+- 단점: 추가 인프라 비용, 설정 복잡
+
+**옵션 B: In-memory rate limiting (단일 인스턴스)**
+- Map 기반 간단한 구현
+- 장점: 빠른 구현, 비용 없음
+- 단점: 서버리스 환경에서 인스턴스가 재생성되면 초기화됨
+
+**옵션 C: Middleware level rate limiting**
+- Next.js middleware에서 처리
+- 장점: 전역적으로 적용 가능
+- 단점: Edge runtime 제약
+
+**현재 트래픽 규모와 예상 사용 패턴을 고려했을 때 어떤 방식이 적절한지 조언 부탁드립니다.**
+
+### 2. 테스트 실패 관련
+
+`npm test` 실행 시 `tests/ui/viewer.layout.test.tsx`에서 3개 테스트가 실패합니다:
+- `shell-panels` testid를 찾지 못함
+- 이 테스트들이 현재 UI 구조와 맞지 않는 것 같습니다
+
+**질문: 이 테스트들을 현재 UI에 맞게 수정해야 하나요, 아니면 해당 UI 컴포넌트가 아직 구현되지 않은 것인가요?**
+
+### 3. 환경변수 설정
+
+`SUPABASE_SERVICE_ROLE_KEY`를 Vercel에 설정해야 하는데, 이건 프로젝트 관리자가 직접 설정해야 합니다.
+- Vercel Dashboard > Project > Settings > Environment Variables
+- `SUPABASE_URL`과 `SUPABASE_SERVICE_ROLE_KEY` 추가 필요
 
 ---
 

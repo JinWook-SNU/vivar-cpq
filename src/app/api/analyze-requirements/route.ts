@@ -45,16 +45,84 @@ function roundToHalfDay(days: number): number {
   return Math.round(days * 2) / 2
 }
 
+// 요청 본문 최대 크기 (10KB)
+const MAX_REQUIREMENTS_LENGTH = 10000
+const MAX_FEATURES_COUNT = 50
+
 export async function POST(request: NextRequest) {
   try {
-    const { requirements, productCategory, existingFeatures } = await request.json()
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: "잘못된 요청 형식입니다." },
+        { status: 400 }
+      )
+    }
 
-    if (!requirements || requirements.trim().length === 0) {
+    // 기본 타입 검증
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { error: "잘못된 요청 형식입니다." },
+        { status: 400 }
+      )
+    }
+
+    const { requirements, productCategory, existingFeatures } = body as {
+      requirements?: unknown
+      productCategory?: unknown
+      existingFeatures?: unknown
+    }
+
+    // requirements 검증
+    if (!requirements || typeof requirements !== "string" || requirements.trim().length === 0) {
       return NextResponse.json(
         { error: "요구사항이 입력되지 않았습니다." },
         { status: 400 }
       )
     }
+
+    if (requirements.length > MAX_REQUIREMENTS_LENGTH) {
+      return NextResponse.json(
+        { error: `요구사항은 ${MAX_REQUIREMENTS_LENGTH}자를 초과할 수 없습니다.` },
+        { status: 400 }
+      )
+    }
+
+    // productCategory 검증 (선택적)
+    if (productCategory !== undefined && typeof productCategory !== "string") {
+      return NextResponse.json(
+        { error: "제품 카테고리 형식이 올바르지 않습니다." },
+        { status: 400 }
+      )
+    }
+
+    // existingFeatures 검증 (선택적)
+    if (existingFeatures !== undefined) {
+      if (!Array.isArray(existingFeatures)) {
+        return NextResponse.json(
+          { error: "기존 기능 목록 형식이 올바르지 않습니다." },
+          { status: 400 }
+        )
+      }
+      if (existingFeatures.length > MAX_FEATURES_COUNT) {
+        return NextResponse.json(
+          { error: `기능 목록은 ${MAX_FEATURES_COUNT}개를 초과할 수 없습니다.` },
+          { status: 400 }
+        )
+      }
+      if (!existingFeatures.every((f) => typeof f === "string")) {
+        return NextResponse.json(
+          { error: "기존 기능 목록에 잘못된 항목이 있습니다." },
+          { status: 400 }
+        )
+      }
+    }
+
+    const validatedRequirements = requirements.trim()
+    const validatedCategory = typeof productCategory === "string" ? productCategory : undefined
+    const validatedFeatures = Array.isArray(existingFeatures) ? existingFeatures : undefined
 
     const apiKey = process.env.OPENAI_API_KEY
 
@@ -107,11 +175,11 @@ export async function POST(request: NextRequest) {
 - 복잡한 기능: 5-10일
 - 대규모 개발: 10일 이상`
 
-    const userPrompt = `제품 카테고리: ${productCategory || "일반"}
-기존 선택된 기능: ${existingFeatures?.join(", ") || "없음"}
+    const userPrompt = `제품 카테고리: ${validatedCategory || "일반"}
+기존 선택된 기능: ${validatedFeatures?.join(", ") || "없음"}
 
 추가 요구사항:
-${requirements}
+${validatedRequirements}
 
 위 요구사항을 분석하여 개발 작업, 인력 배분, 기술 고려사항을 JSON 형식으로 제공해주세요.`
 
