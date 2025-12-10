@@ -41,9 +41,13 @@ import {
   Ticket,
   Wrench,
   Gift,
+  Share2,
+  Link as LinkIcon,
+  Check,
 } from "lucide-react"
 import type { SurveyFormData, MaintenancePlanType } from "@/components/quote/ConfiguratorSurvey"
 import { MAINTENANCE_PLANS } from "@/components/quote/ConfiguratorSurvey"
+import { calculateCostBreakdown } from "@/lib/quote-calculator"
 import { ProjectTimeline } from "@/components/quote/ProjectTimeline"
 import { deserializeAnalysis, type File3DAnalysis } from "@/lib/3d-analysis"
 import { exportElementToPDF } from "@/lib/pdf-export"
@@ -608,17 +612,10 @@ function calculateEstimate(surveyData: Partial<SurveyFormData>): EstimateData {
     },
   ].filter(p => p.days > 0)
 
-  // 비용 계산
+  // 비용 계산 - 공통 유틸리티 사용
   const laborCost = personnelSummary.reduce((sum, p) => sum + p.totalCost, 0)
-  const overhead = Math.round(laborCost * 1.1) // 제경비 110%
-  const technicalFee = Math.round((laborCost + overhead) * 0.2) // 기술료 20%
-  const subtotal = laborCost + overhead + technicalFee
-  const vat = Math.round(subtotal * 0.1) // VAT 10%
-  const totalBeforeDiscount = subtotal + vat
-
-  // 만원 단위 절사
-  const truncationDiscount = totalBeforeDiscount % 10000
-  const totalCost = totalBeforeDiscount - truncationDiscount
+  const costBreakdown = calculateCostBreakdown({ laborCost })
+  const { overhead, technicalFee, subtotal, vat, totalBeforeDiscount, truncationDiscount, totalCost } = costBreakdown
 
   // 총 소요일 (병렬 작업 고려하여 가장 긴 인력의 투입일 기준)
   const totalDays = Math.max(
@@ -733,15 +730,9 @@ function recalculateCosts(features: FeatureAllocation[], excludedIndices: Set<nu
     },
   ].filter(p => p.days > 0)
 
-  // 비용 계산
+  // 비용 계산 - 공통 유틸리티 사용
   const laborCost = personnelSummary.reduce((sum, p) => sum + p.totalCost, 0)
-  const overhead = Math.round(laborCost * 1.1)
-  const technicalFee = Math.round((laborCost + overhead) * 0.2)
-  const subtotal = laborCost + overhead + technicalFee
-  const vat = Math.round(subtotal * 0.1)
-  const totalBeforeDiscount = subtotal + vat
-  const truncationDiscount = totalBeforeDiscount % 10000
-  const totalCost = totalBeforeDiscount - truncationDiscount
+  const costResult = calculateCostBreakdown({ laborCost })
 
   const totalDays = Math.max(
     totalsByRole.xrDeveloper,
@@ -753,13 +744,13 @@ function recalculateCosts(features: FeatureAllocation[], excludedIndices: Set<nu
   return {
     personnelSummary,
     laborCost,
-    overhead,
-    technicalFee,
-    subtotal,
-    vat,
-    totalBeforeDiscount,
-    truncationDiscount,
-    totalCost,
+    overhead: costResult.overhead,
+    technicalFee: costResult.technicalFee,
+    subtotal: costResult.subtotal,
+    vat: costResult.vat,
+    totalBeforeDiscount: costResult.totalBeforeDiscount,
+    truncationDiscount: costResult.truncationDiscount,
+    totalCost: costResult.totalCost,
     totalDays,
     includedCount: includedFeatures.length,
   }
@@ -784,6 +775,9 @@ export default function EstimatePage() {
   const [excludedAiTasks, setExcludedAiTasks] = useState<Set<number>>(new Set())
   const [file3DAnalysis, setFile3DAnalysis] = useState<File3DAnalysis | null>(null)
   const [isExportingPDF, setIsExportingPDF] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedQuoteId, setSavedQuoteId] = useState<string | null>(null)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   // 할인 관련 state
   const [overheadDiscountEnabled, setOverheadDiscountEnabled] = useState(false)
@@ -1175,6 +1169,62 @@ export default function EstimatePage() {
     }
   }
 
+  // 견적서 저장 및 공유 링크 생성
+  const handleSaveAndShare = async () => {
+    const data = getPrintViewData()
+    if (!data || !surveyData) return
+
+    setIsSaving(true)
+    try {
+      const response = await fetch("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: data.companyName,
+          productCategory: data.productCategory,
+          totalCost: data.totalCost,
+          surveyData: surveyData,
+          estimateData: data,
+          aiAnalysisData: aiAnalysis,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("저장 실패")
+      }
+
+      const result = await response.json()
+      setSavedQuoteId(result.id)
+    } catch (error) {
+      console.error("견적서 저장 실패:", error)
+      alert("견적서 저장에 실패했습니다. 다시 시도해주세요.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // 공유 링크 복사
+  const handleCopyLink = async () => {
+    if (!savedQuoteId) return
+
+    const shareUrl = `${window.location.origin}/quote/shared/${savedQuoteId}`
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea")
+      textArea.value = shareUrl
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    }
+  }
+
   const printViewData = getPrintViewData()
 
   if (!surveyData || !estimate) {
@@ -1283,6 +1333,36 @@ export default function EstimatePage() {
             </Button>
           </Link>
           <div className="flex gap-2">
+            {/* 공유 버튼 */}
+            {savedQuoteId ? (
+              <Button variant="outline" size="sm" onClick={handleCopyLink}>
+                {linkCopied ? (
+                  <>
+                    <Check className="size-4 mr-2 text-green-600" />
+                    복사됨!
+                  </>
+                ) : (
+                  <>
+                    <LinkIcon className="size-4 mr-2" />
+                    링크 복사
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={handleSaveAndShare} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="size-4 mr-2" />
+                    공유 링크 생성
+                  </>
+                )}
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleExportHTML}>
               <FileCode className="size-4 mr-2" />
               HTML 내보내기
