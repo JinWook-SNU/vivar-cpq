@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, use } from "react"
+import { useEffect, useState, useRef, use } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -30,9 +30,12 @@ import {
   Tag,
   X,
   RotateCcw,
+  Download,
+  Loader2,
 } from "lucide-react"
 import type { PrintViewData } from "@/components/quote/EstimatePrintView"
 import { calculateCostBreakdown } from "@/lib/quote-calculator"
+import { exportElementToPDF } from "@/lib/pdf-export"
 
 interface QuoteResponse {
   id: string
@@ -105,6 +108,8 @@ export default function SharedQuotePage({
   const [error, setError] = useState<string | null>(null)
   const [excludedFeatures, setExcludedFeatures] = useState<Set<number>>(new Set())
   const [excludedAiTasks, setExcludedAiTasks] = useState<Set<number>>(new Set())
+  const [isExportingPDF, setIsExportingPDF] = useState(false)
+  const printRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function fetchQuote() {
@@ -224,21 +229,63 @@ export default function SharedQuotePage({
   const totalExcludedCost = data.totalCost - adjustedTotalCost
   const hasAnyExclusion = hasExclusions || hasAiExclusions
 
+  // PDF 내보내기 핸들러
+  const handleExportPDF = async () => {
+    if (!printRef.current || isExportingPDF) return
+
+    setIsExportingPDF(true)
+    try {
+      // 파일명 생성 (회사명_날짜)
+      const dateStr = new Date(quote.created_at).toISOString().split("T")[0]
+      const filename = `견적서_${data.companyName}_${dateStr}.pdf`
+
+      await exportElementToPDF(printRef.current, { filename })
+    } catch (error) {
+      console.error("PDF 내보내기 실패:", error)
+      alert("PDF 내보내기에 실패했습니다. 다시 시도해주세요.")
+    } finally {
+      setIsExportingPDF(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4">
       <div className="container max-w-6xl mx-auto">
-        {/* Title */}
-        <div className="text-center mb-12">
-          <Badge className="mb-4">공유된 견적서</Badge>
-          <h1 className="text-3xl font-semibold mb-2">프로젝트 견적 및 개발 계획</h1>
-          <p className="text-muted-foreground">
-            {data.companyName} - {data.productCategory} 컨피규레이터
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            <Calendar className="size-4 inline mr-1" />
-            {new Date(quote.created_at).toLocaleDateString("ko-KR")}
-          </p>
+        {/* PDF 출력 버튼 */}
+        <div className="flex justify-end mb-4">
+          <Button
+            size="sm"
+            onClick={handleExportPDF}
+            disabled={isExportingPDF}
+          >
+            {isExportingPDF ? (
+              <>
+                <Loader2 className="size-4 mr-2 animate-spin" />
+                내보내는 중...
+              </>
+            ) : (
+              <>
+                <Download className="size-4 mr-2" />
+                PDF 내보내기
+              </>
+            )}
+          </Button>
         </div>
+
+        {/* PDF 출력 영역 */}
+        <div ref={printRef}>
+          {/* Title */}
+          <div className="text-center mb-12">
+            <Badge className="mb-4">공유된 견적서</Badge>
+            <h1 className="text-3xl font-semibold mb-2">프로젝트 견적 및 개발 계획</h1>
+            <p className="text-muted-foreground">
+              {data.companyName} - {data.productCategory} 컨피규레이터
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              <Calendar className="size-4 inline mr-1" />
+              {new Date(quote.created_at).toLocaleDateString("ko-KR")}
+            </p>
+          </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Project Overview & Cost */}
@@ -1050,10 +1097,12 @@ export default function SharedQuotePage({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-12 text-sm text-muted-foreground">
-          <p>이 견적서는 VIVAR CPQ 시스템에서 생성되었습니다.</p>
+          {/* Footer */}
+          <div className="text-center mt-12 text-sm text-muted-foreground">
+            <p>이 견적서는 VIVAR CPQ 시스템에서 생성되었습니다.</p>
+          </div>
         </div>
+        {/* End of printRef */}
       </div>
     </div>
   )
