@@ -668,12 +668,12 @@ export function generateEstimateHTML(data: PrintViewData): string {
         </div>
       </div>
       <div class="card-content">
-        <!-- 개발 비용 (상위 항목) -->
-        <div class="cost-row" style="background:#f8fafc;margin:0 -24px;padding:12px 24px;font-weight:600;">
-          <span class="label" style="font-weight:600;color:#1e293b;">개발 비용</span>
-          <span class="value" style="font-weight:600;color:#1e293b;">${(data.laborCost + data.overhead + data.technicalFee).toLocaleString()}원</span>
+        <!-- 인건비 원가 -->
+        <div class="cost-row">
+          <span class="label">인건비 원가</span>
+          <span class="value">${data.laborCost.toLocaleString()}원</span>
         </div>
-        <!-- 개발 비용 하위 항목들 -->
+        <!-- 인건비 하위 항목들 -->
         <div style="border-left:3px solid #e2e8f0;margin-left:8px;padding-left:16px;">
           <div class="cost-row">
             <span class="label" style="color:#64748b;">기본 옵션 개발</span>
@@ -685,6 +685,16 @@ export function generateEstimateHTML(data: PrintViewData): string {
             <span class="value text-purple">${data.aiAnalysisCost.toLocaleString()}원</span>
           </div>
           ` : ''}
+        </div>
+        <!-- 제경비 -->
+        <div class="cost-row">
+          <span class="label">제경비 (110%)</span>
+          <span class="value">${data.overhead.toLocaleString()}원</span>
+        </div>
+        <!-- 기술료 -->
+        <div class="cost-row">
+          <span class="label">기술료 (20%)</span>
+          <span class="value">${data.technicalFee.toLocaleString()}원</span>
         </div>
         ${data.discount ? `
         <div class="cost-row" style="background:#fef2f2;margin:0 -24px;padding:12px 24px;">
