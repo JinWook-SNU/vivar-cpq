@@ -74,3 +74,32 @@ export async function getQuote(id: string): Promise<QuoteData | null> {
 
   return data
 }
+
+// 견적서 목록 조회 (요약 정보만)
+export interface QuoteSummary {
+  id: string
+  created_at: string
+  company_name: string
+  product_category: string
+  total_cost: number
+}
+
+export async function getQuotesList(): Promise<QuoteSummary[]> {
+  const supabase = getSupabaseClient()
+  if (!supabase) {
+    console.error("Supabase client not initialized")
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("id, created_at, company_name, product_category, total_cost")
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching quotes list:", error)
+    return []
+  }
+
+  return data || []
+}

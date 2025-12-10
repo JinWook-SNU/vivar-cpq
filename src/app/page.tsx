@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Settings, ArrowRight, Layers, Zap } from "lucide-react"
+import { FileText, Settings, ArrowRight, Layers, Zap, ClipboardList } from "lucide-react"
 
 export default function Home() {
   return (
@@ -24,6 +24,12 @@ export default function Home() {
                 <FileText className="size-5 mr-2" />
                 Start Quote Survey
                 <ArrowRight className="size-5 ml-2" />
+              </Button>
+            </Link>
+            <Link href="/quotes">
+              <Button size="lg" variant="outline" className="text-lg px-8 h-14">
+                <ClipboardList className="size-5 mr-2" />
+                견적서 목록
               </Button>
             </Link>
             <Link href="/cpq-builder">
