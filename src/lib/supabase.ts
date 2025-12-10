@@ -1,16 +1,46 @@
 import "server-only"
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// 서버 라우트에서는 반드시 SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY 사용
+// public 키로 fallback하지 않음 (프로덕션 보안)
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+// 환경변수 검증 상태
+let envValidated = false
+
+// 환경변수 검증 - 서버 라우트에서 Supabase 필요 시 fail-fast
+function validateSupabaseEnv(): void {
+  if (envValidated) return
+
+  if (!supabaseUrl) {
+    console.error(
+      "SUPABASE_URL environment variable is not set. " +
+      "Database operations will fail. " +
+      "Set SUPABASE_URL in your environment or .env.local file."
+    )
+  }
+
+  if (!supabaseServiceRoleKey) {
+    console.error(
+      "SUPABASE_SERVICE_ROLE_KEY environment variable is not set. " +
+      "Database operations will fail. " +
+      "Set SUPABASE_SERVICE_ROLE_KEY in your environment or .env.local file."
+    )
+  }
+
+  envValidated = true
+}
 
 // Supabase 클라이언트를 lazy하게 초기화
 let _supabase: SupabaseClient | null = null
 
 function getSupabaseClient(): SupabaseClient | null {
+  // 환경변수 검증 (최초 1회)
+  validateSupabaseEnv()
+
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    console.warn("Supabase environment variables are not configured")
+    // 환경변수 미설정 시 null 반환 (호출자가 처리)
     return null
   }
 

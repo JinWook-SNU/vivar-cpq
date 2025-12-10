@@ -1,5 +1,40 @@
 import { NextRequest, NextResponse } from "next/server"
 
+// 간단한 in-memory rate limiting
+// 주의: 서버리스 환경에서는 인스턴스 간 공유되지 않음
+// 프로덕션에서는 Redis 또는 Upstash 사용 권장
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+const RATE_LIMIT_WINDOW_MS = 60 * 1000 // 1분
+const RATE_LIMIT_MAX_REQUESTS = 10 // 분당 10회
+
+function checkRateLimit(ip: string): { allowed: boolean; remaining: number; resetIn: number } {
+  const now = Date.now()
+  const record = rateLimitMap.get(ip)
+
+  // 오래된 레코드 정리 (메모리 누수 방지)
+  if (rateLimitMap.size > 10000) {
+    const cutoff = now - RATE_LIMIT_WINDOW_MS
+    for (const [key, value] of rateLimitMap.entries()) {
+      if (value.resetTime < cutoff) {
+        rateLimitMap.delete(key)
+      }
+    }
+  }
+
+  if (!record || now > record.resetTime) {
+    // 새 윈도우 시작
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS })
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1, resetIn: RATE_LIMIT_WINDOW_MS }
+  }
+
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remaining: 0, resetIn: record.resetTime - now }
+  }
+
+  record.count++
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - record.count, resetIn: record.resetTime - now }
+}
+
 // AI 분석 결과 타입 정의
 export interface AIRequirementAnalysis {
   summary: string // 요구사항 요약
@@ -50,6 +85,27 @@ const MAX_REQUIREMENTS_LENGTH = 10000
 const MAX_FEATURES_COUNT = 50
 
 export async function POST(request: NextRequest) {
+  // Rate limiting 체크
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+             request.headers.get("x-real-ip") ||
+             "unknown"
+  const rateLimit = checkRateLimit(ip)
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": String(RATE_LIMIT_MAX_REQUESTS),
+          "X-RateLimit-Remaining": String(rateLimit.remaining),
+          "X-RateLimit-Reset": String(Math.ceil(rateLimit.resetIn / 1000)),
+          "Retry-After": String(Math.ceil(rateLimit.resetIn / 1000)),
+        },
+      }
+    )
+  }
+
   try {
     let body: unknown
     try {
