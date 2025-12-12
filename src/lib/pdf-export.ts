@@ -263,8 +263,6 @@ export async function exportElementToPDF(
         windowWidth: A4_WIDTH_PX,
         onclone: (clonedDoc, clonedElement) => {
           clonedElement.setAttribute("data-pdf-print-container", "true")
-          clonedElement.style.backgroundColor = "#ffffff"
-          clonedElement.style.color = "#0f172a"
           clonedElement.style.width = `${A4_WIDTH_PX}px`
           clonedElement.style.overflow = "visible"
           // CTO: transform/letter-spacing 기본값 강제
@@ -279,10 +277,9 @@ export async function exportElementToPDF(
             htmlEl.style.letterSpacing = "normal"
           })
 
+          // 부모 요소는 overflow만 설정 (배경색은 건드리지 않음 - 컴포넌트 배경색 유지)
           let parent = clonedElement.parentElement
           while (parent) {
-            parent.style.backgroundColor = "#ffffff"
-            parent.style.color = "#0f172a"
             parent.style.overflow = "visible"
             parent = parent.parentElement
           }

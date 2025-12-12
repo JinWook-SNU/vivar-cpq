@@ -489,7 +489,7 @@ export default function SharedQuotePage({
                     <span className="text-muted-foreground">기본 기능 인건비</span>
                     <span className="font-medium">{(data.laborCost - (data.aiAnalysisCost || 0)).toLocaleString()}원</span>
                   </div>
-                  {data.aiAnalysisCost && data.aiAnalysisCost > 0 && (
+                  {data.aiAnalysisCost > 0 && (
                     <div className="flex justify-between items-center py-2">
                       <span className="text-muted-foreground flex items-center gap-2">
                         <Sparkles className="size-4 text-purple-500" />
