@@ -4,8 +4,10 @@ Keep only current open items here. Older notes live in `CTO-NOTES-archive.md`.
 
 ## Open items
 - Supabase env: ensure service role key is configured; avoid disabling public fallback without env readiness.
-- Analyze API: production-grade rate limiting/storage (current in-memory throttling is insufficient across instances).
+- Analyze API: production-grade rate limiting/storage (current in-memory throttling is insufficient across instances); add payload size/field validation.
+- Shared quote page params: still using `params: Promise` + `use(params)` in client page; switch to plain `{ params: { id: string } }` and drop React `use` experimental hook.
 - PDF export: text descenders clipped in output (글자 하단 잘림) on shared/estimate print views.
+- Cost recalculation: clamp adjusted labor cost ≥ 0 in shared quote PDF recalcs (exclusions can drive negative laborCost, cascading to VAT/total).
 
 ## Action: Shared/Estimate PDF (print-only layout)
 - Status: 화면 분리 이슈는 해결됨. 이제 A4 전용 print 뷰만 캡처.

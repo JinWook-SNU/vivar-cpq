@@ -36,7 +36,6 @@ import {
   RefreshCw,
 } from "lucide-react"
 import { EstimatePrintView, type PrintViewData } from "@/components/quote/EstimatePrintView"
-import { calculateCostBreakdown } from "@/lib/quote-calculator"
 import { exportElementToPDF, printWithBrowser } from "@/lib/pdf-export"
 
 interface QuoteResponse {
@@ -215,24 +214,60 @@ export default function SharedQuotePage({
     ?.filter((_, index) => excludedAiTasks.has(index))
     .reduce((sum, t) => sum + t.cost, 0) || 0
 
-  // 조정된 인건비 계산 - 음수 방지 (제외 항목이 원가 초과 시)
-  const adjustedLaborCost = Math.max(0, data.laborCost - excludedFeatureCost - excludedAiTaskCost)
-  const adjustedCost = calculateCostBreakdown({
-    laborCost: adjustedLaborCost,
-    additionalCosts: data.preprocessing3DCost,
-  })
-  const adjustedOverhead = adjustedCost.overhead
-  const adjustedTechFee = adjustedCost.technicalFee
-  const adjustedSubtotal = adjustedCost.subtotal
-  const adjustedVat = adjustedCost.vat
-  const adjustedTruncationDiscount = adjustedCost.truncationDiscount
-  const adjustedTotalCost = adjustedCost.totalCost
-
-  // 할인 금액 계산
-  const totalExcludedCost = data.totalCost - adjustedTotalCost
   const hasAnyExclusion = hasExclusions || hasAiExclusions
 
+  // 공유 페이지에서 추가 제외가 있는 경우에만 재계산
+  // 없으면 저장된 값(할인 적용됨)을 그대로 사용
+  const adjustedLaborCost = hasAnyExclusion
+    ? Math.max(0, data.laborCost - excludedFeatureCost - excludedAiTaskCost)
+    : data.laborCost
+
+  // 추가 제외가 있을 때만 재계산 (저장된 할인율은 반영 안됨 - 단순화)
+  // 추가 제외가 없으면 저장된 값 그대로 사용
+  const adjustedOverhead = hasAnyExclusion
+    ? Math.round(adjustedLaborCost * 1.1)
+    : data.overhead
+  const adjustedTechFee = hasAnyExclusion
+    ? Math.round((adjustedLaborCost + adjustedOverhead) * 0.2)
+    : data.technicalFee
+  const adjustedSubtotal = hasAnyExclusion
+    ? adjustedLaborCost + adjustedOverhead + adjustedTechFee + data.preprocessing3DCost
+    : data.subtotal
+  const adjustedVat = hasAnyExclusion
+    ? Math.round(adjustedSubtotal * 0.1)
+    : data.vat
+  const adjustedTruncationDiscount = hasAnyExclusion
+    ? (adjustedSubtotal + adjustedVat) % 10000
+    : data.truncationDiscount
+  const adjustedTotalCost = hasAnyExclusion
+    ? adjustedSubtotal + adjustedVat - adjustedTruncationDiscount
+    : data.totalCost
+
+  // 할인 금액 계산 (추가 제외에 의한 할인)
+  const totalExcludedCost = hasAnyExclusion ? data.totalCost - adjustedTotalCost : 0
+
   // PDF 출력용 데이터 (제외 항목 반영)
+  // 공유 페이지에서 추가로 제외한 항목이 있으면 할인 정보 재계산
+  const getDiscountInfo = () => {
+    // 공유 페이지에서 추가 제외가 있는 경우
+    if (hasAnyExclusion && totalExcludedCost > 0) {
+      // 원본에 이미 할인이 있었다면 합산
+      const originalDiscount = data.discount?.totalDiscount || 0
+      const originalOriginalTotal = data.discount?.originalTotal || data.totalCost
+      const combinedDiscount = originalDiscount + totalExcludedCost
+      return {
+        originalTotal: originalOriginalTotal,
+        totalDiscount: combinedDiscount,
+        discountPercentage: Math.round((combinedDiscount / originalOriginalTotal) * 100),
+        // 원본 할인 정보 유지
+        overheadDiscount: data.discount?.overheadDiscount,
+        techFeeDiscount: data.discount?.techFeeDiscount,
+      }
+    }
+    // 원본에 할인이 있었다면 그대로 사용
+    return data.discount
+  }
+
   const printViewData: PrintViewData = {
     companyName: data.companyName,
     productCategory: data.productCategory,
@@ -244,7 +279,7 @@ export default function SharedQuotePage({
     laborCost: adjustedLaborCost,
     overhead: adjustedOverhead,
     technicalFee: adjustedTechFee,
-    subtotal: adjustedCost.subtotal,
+    subtotal: adjustedSubtotal,
     vat: adjustedVat,
     truncationDiscount: adjustedTruncationDiscount,
     preprocessing3DCost: data.preprocessing3DCost,
@@ -263,16 +298,8 @@ export default function SharedQuotePage({
         }
       : undefined,
     maintenance: data.maintenance,
-    // 제외 항목이 있으면 할인 정보 표시
-    ...(hasAnyExclusion && totalExcludedCost > 0
-      ? {
-          discount: {
-            originalTotal: data.totalCost,
-            totalDiscount: totalExcludedCost,
-            discountPercentage: Math.round((totalExcludedCost / data.totalCost) * 100),
-          },
-        }
-      : {}),
+    // 저장된 할인 정보 + 추가 제외 항목 반영
+    discount: getDiscountInfo(),
   }
 
   // PDF 내보내기 핸들러
@@ -503,11 +530,25 @@ export default function SharedQuotePage({
                     <span className="font-semibold">{data.laborCost.toLocaleString()}원</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-muted-foreground">제경비 (110%)</span>
+                    <span className="text-muted-foreground">
+                      제경비 (110%)
+                      {data.discount?.overheadDiscount && (
+                        <Badge variant="outline" className="ml-2 text-xs text-red-600 border-red-200">
+                          {data.discount.overheadDiscount.rate}% 할인
+                        </Badge>
+                      )}
+                    </span>
                     <span className="font-medium">{data.overhead.toLocaleString()}원</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-muted-foreground">기술료 (20%)</span>
+                    <span className="text-muted-foreground">
+                      기술료 (20%)
+                      {data.discount?.techFeeDiscount && (
+                        <Badge variant="outline" className="ml-2 text-xs text-red-600 border-red-200">
+                          {data.discount.techFeeDiscount.rate}% 할인
+                        </Badge>
+                      )}
+                    </span>
                     <span className="font-medium">{data.technicalFee.toLocaleString()}원</span>
                   </div>
                   {data.preprocessing3DCost > 0 && (
@@ -1006,14 +1047,22 @@ export default function SharedQuotePage({
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="text-center mb-6">
-                  {/* 원래 금액 (제외 항목이 있을 때만 표시) */}
-                  {hasAnyExclusion && (
+                  {/* 원래 금액 (저장된 할인 또는 추가 제외 항목이 있을 때 표시) */}
+                  {(data.discount || hasAnyExclusion) && (
                     <p className="text-xl text-muted-foreground line-through mb-1">
-                      {data.totalCost.toLocaleString()}원
+                      {(data.discount?.originalTotal || data.totalCost).toLocaleString()}원
                     </p>
                   )}
                   <p className="text-3xl font-bold">{adjustedTotalCost.toLocaleString()}원</p>
                   <p className="text-sm text-muted-foreground mt-1">VAT 포함 총 비용</p>
+                  {/* 저장된 할인 정보 표시 */}
+                  {data.discount && !hasAnyExclusion && (
+                    <Badge className="mt-2 bg-red-100 text-red-700">
+                      <Tag className="size-3 mr-1" />
+                      {data.discount.discountPercentage}% 할인 (-{data.discount.totalDiscount.toLocaleString()}원)
+                    </Badge>
+                  )}
+                  {/* 추가 제외 항목이 있을 때 */}
                   {hasAnyExclusion && (
                     <Badge className="mt-2 bg-amber-100 text-amber-700">
                       <Tag className="size-3 mr-1" />

@@ -235,37 +235,48 @@ export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewPro
             <p style={{ fontSize: "12px", color: colors.slate500 }}>{data.productCategory} 컨피규레이터</p>
           </div>
 
-          {/* 견적 요약 */}
+          {/* 견적 요약 - 배경색을 border로 대체하여 html2canvas 호환성 확보 */}
           <div style={{
             marginBottom: "24px",
             padding: "20px",
-            backgroundColor: colors.slate800,
-            color: colors.white,
+            background: "#1e293b", // colors.slate800
+            color: "#ffffff",
             borderRadius: "8px",
+            border: "1px solid #1e293b",
           }}>
-            <p style={{ fontSize: "12px", color: colors.slate400, marginBottom: "4px" }}>총 견적 금액</p>
+            <p style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "8px", lineHeight: "1.5" }}>총 견적 금액</p>
             {data.discount && (
-              <p style={{ fontSize: "16px", color: colors.slate400, textDecoration: "line-through", marginBottom: "2px" }}>
+              <p style={{
+                fontSize: "16px",
+                color: "#94a3b8",
+                marginBottom: "4px",
+                lineHeight: "1.5",
+                textDecoration: "line-through",
+                textDecorationColor: "#94a3b8",
+                textDecorationThickness: "2px",
+              }}>
                 {data.discount.originalTotal.toLocaleString()}원
               </p>
             )}
-            <p style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "4px" }}>
+            <p style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "4px", lineHeight: "1.3", color: "#ffffff" }}>
               {data.totalCost.toLocaleString()}원
             </p>
-            <p style={{ fontSize: "11px", color: colors.slate400 }}>VAT 포함</p>
+            <p style={{ fontSize: "11px", color: "#94a3b8", lineHeight: "1.5" }}>VAT 포함</p>
 
             {data.discount && (
-              <span style={{
+              <div style={{
                 display: "inline-block",
-                marginTop: "8px",
-                backgroundColor: colors.red500,
-                padding: "3px 10px",
+                marginTop: "10px",
+                background: "#ef4444", // colors.red500
+                color: "#ffffff",
+                padding: "6px 14px",
                 borderRadius: "9999px",
                 fontSize: "12px",
                 fontWeight: "600",
+                lineHeight: "1.4",
               }}>
                 {data.discount.discountPercentage}% 할인 (-{data.discount.totalDiscount.toLocaleString()}원)
-              </span>
+              </div>
             )}
 
             <div style={{

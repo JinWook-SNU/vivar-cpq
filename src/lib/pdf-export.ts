@@ -258,10 +258,10 @@ export async function exportElementToPDF(
         scale: 2, // 고해상도 (CTO: 2 정도로 제한)
         useCORS: true,
         logging: false,
-        backgroundColor: "#ffffff",
+        backgroundColor: null, // 요소의 원래 배경색 유지
         width: A4_WIDTH_PX,
         windowWidth: A4_WIDTH_PX,
-        onclone: (clonedDoc, clonedElement) => {
+        onclone: (_clonedDoc, clonedElement) => {
           clonedElement.setAttribute("data-pdf-print-container", "true")
           clonedElement.style.width = `${A4_WIDTH_PX}px`
           clonedElement.style.overflow = "visible"
@@ -269,15 +269,7 @@ export async function exportElementToPDF(
           clonedElement.style.transform = "none"
           clonedElement.style.letterSpacing = "normal"
 
-          // 모든 텍스트 요소에 descender 잘림 방지 스타일 적용
-          const textElements = clonedDoc.querySelectorAll("p, span, td, th, li, h1, h2, h3, h4, h5, h6")
-          textElements.forEach((el) => {
-            const htmlEl = el as HTMLElement
-            htmlEl.style.transform = "none"
-            htmlEl.style.letterSpacing = "normal"
-          })
-
-          // 부모 요소는 overflow만 설정 (배경색은 건드리지 않음 - 컴포넌트 배경색 유지)
+          // 부모 요소는 overflow만 설정
           let parent = clonedElement.parentElement
           while (parent) {
             parent.style.overflow = "visible"
