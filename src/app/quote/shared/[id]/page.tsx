@@ -41,6 +41,7 @@ import { exportElementToPDF, printWithBrowser } from "@/lib/pdf-export"
 interface QuoteResponse {
   id: string
   created_at: string
+  quote_number?: string
   company_name: string
   product_category: string
   total_cost: number
@@ -272,6 +273,7 @@ export default function SharedQuotePage({
     companyName: data.companyName,
     productCategory: data.productCategory,
     date: new Date(quote.created_at).toLocaleDateString("ko-KR"),
+    quoteNumber: quote.quote_number,
     totalCost: adjustedTotalCost,
     featureCount: includedFeatures.length,
     totalDays: data.totalDays, // TODO: 제외 항목에 따라 조정 필요시 수정
@@ -398,10 +400,17 @@ export default function SharedQuotePage({
             <p className="text-muted-foreground">
               {data.companyName} - {data.productCategory} 컨피규레이터
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              <Calendar className="size-4 inline mr-1" />
-              {new Date(quote.created_at).toLocaleDateString("ko-KR")}
-            </p>
+            <div className="flex items-center justify-center gap-3 mt-2 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Calendar className="size-4" />
+                {new Date(quote.created_at).toLocaleDateString("ko-KR")}
+              </span>
+              {quote.quote_number && (
+                <Badge variant="outline" className="font-mono">
+                  No. {quote.quote_number}
+                </Badge>
+              )}
+            </div>
           </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

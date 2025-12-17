@@ -70,6 +70,7 @@ function getSupabaseClient(): SupabaseClient | null {
 export interface QuoteData {
   id?: string
   created_at?: string
+  quote_number?: string // 견적서 번호 (YYYYMMDD-NNN 형식)
   company_name: string
   product_category: string
   total_cost: number
@@ -78,18 +79,56 @@ export interface QuoteData {
   ai_analysis_data?: Record<string, unknown> | null
 }
 
+// 견적서 번호 생성 (YYYYMMDD-NNN 형식)
+async function generateQuoteNumber(): Promise<string> {
+  const supabase = getSupabaseClient()
+  if (!supabase) {
+    // fallback: 타임스탬프 기반 번호
+    const now = new Date()
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "")
+    return `${dateStr}-001`
+  }
+
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, "0")
+  const day = String(now.getDate()).padStart(2, "0")
+  const dateStr = `${year}${month}${day}`
+
+  // 해당 날짜의 견적서 수 조회
+  const startOfDay = `${year}-${month}-${day}T00:00:00.000Z`
+  const endOfDay = `${year}-${month}-${day}T23:59:59.999Z`
+
+  const { count, error } = await supabase
+    .from("quotes")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", startOfDay)
+    .lte("created_at", endOfDay)
+
+  if (error) {
+    console.error("Error counting quotes for today:", error)
+    return `${dateStr}-001`
+  }
+
+  const sequenceNumber = String((count || 0) + 1).padStart(3, "0")
+  return `${dateStr}-${sequenceNumber}`
+}
+
 // 견적서 저장
-export async function saveQuote(data: Omit<QuoteData, "id" | "created_at">): Promise<{ id: string } | null> {
+export async function saveQuote(data: Omit<QuoteData, "id" | "created_at" | "quote_number">): Promise<{ id: string; quote_number: string } | null> {
   const supabase = getSupabaseClient()
   if (!supabase) {
     console.error("Supabase client not initialized")
     return null
   }
 
+  // 견적서 번호 생성
+  const quoteNumber = await generateQuoteNumber()
+
   const { data: result, error } = await supabase
     .from("quotes")
-    .insert([data])
-    .select("id")
+    .insert([{ ...data, quote_number: quoteNumber }])
+    .select("id, quote_number")
     .single()
 
   if (error) {
@@ -126,6 +165,7 @@ export async function getQuote(id: string): Promise<QuoteData | null> {
 export interface QuoteSummary {
   id: string
   created_at: string
+  quote_number?: string
   company_name: string
   product_category: string
   total_cost: number
@@ -140,7 +180,7 @@ export async function getQuotesList(): Promise<QuoteSummary[]> {
 
   const { data, error } = await supabase
     .from("quotes")
-    .select("id, created_at, company_name, product_category, total_cost")
+    .select("id, created_at, quote_number, company_name, product_category, total_cost")
     .order("created_at", { ascending: false })
 
   if (error) {

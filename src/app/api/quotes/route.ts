@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ id: result.id })
+    return NextResponse.json({ id: result.id, quoteNumber: result.quote_number })
   } catch (error) {
     console.error("Quote save error:", error)
     return NextResponse.json(

@@ -17,6 +17,7 @@ import {
 interface QuoteSummary {
   id: string
   created_at: string
+  quote_number?: string
   company_name: string
   product_category: string
   total_cost: number
@@ -120,7 +121,14 @@ export default function QuotesListPage() {
                         <Building2 className="size-5 text-primary" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{quote.company_name}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-lg">{quote.company_name}</CardTitle>
+                          {quote.quote_number && (
+                            <Badge variant="outline" className="font-mono text-xs">
+                              {quote.quote_number}
+                            </Badge>
+                          )}
+                        </div>
                         <CardDescription className="flex items-center gap-2 mt-1">
                           <Badge variant="secondary">
                             {CATEGORY_LABELS[quote.product_category] || quote.product_category}

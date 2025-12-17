@@ -20,6 +20,7 @@ export interface PrintViewData {
   companyName: string
   productCategory: string
   date: string
+  quoteNumber?: string // 견적서 번호 (YYYYMMDD-NNN)
   totalCost: number
   featureCount: number
   totalDays: number
@@ -218,6 +219,16 @@ export const EstimatePrintView = forwardRef<HTMLDivElement, EstimatePrintViewPro
               <p style={{ color: colors.slate500, fontSize: "12px" }}>3D Configurator Development Estimate</p>
             </div>
             <div style={{ textAlign: "right" }}>
+              {data.quoteNumber && (
+                <p style={{
+                  fontSize: "11px",
+                  color: colors.slate500,
+                  marginBottom: "4px",
+                  fontFamily: "monospace",
+                }}>
+                  No. {data.quoteNumber}
+                </p>
+              )}
               <p style={{ fontSize: "12px", color: colors.slate500 }}>발행일</p>
               <p style={{ fontWeight: "600", fontSize: "14px" }}>{data.date}</p>
             </div>
