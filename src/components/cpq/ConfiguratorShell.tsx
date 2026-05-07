@@ -121,7 +121,10 @@ export default function ConfiguratorShell({ toggles }: ConfiguratorShellProps) {
           </div>
 
           {hasPanels ? (
-            <div className="hidden h-full min-h-0 flex-col gap-4 overflow-y-auto border-l border-neutral-200 bg-neutral-50 p-4 md:flex">
+            <div
+              className="hidden h-full min-h-0 flex-col gap-4 overflow-y-auto border-l border-neutral-200 bg-neutral-50 p-4 md:flex"
+              data-testid="shell-panels"
+            >
               {vm.panels.color && <ProductColorPanel />}
               {vm.panels.options && (
                 <div data-testid="panel-options">
@@ -147,6 +150,7 @@ export default function ConfiguratorShell({ toggles }: ConfiguratorShellProps) {
           ) : (
             <div
               aria-hidden="true"
+              data-testid="shell-panels"
               className="hidden md:flex md:min-h-0 md:flex-col md:items-center md:justify-center md:border-l md:border-dashed md:border-neutral-200 md:bg-neutral-50 md:px-8"
             >
               <p className="text-xs text-neutral-500 text-center leading-relaxed">
